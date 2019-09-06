@@ -1,0 +1,4 @@
+rootProject.name = 'funky'
+include 'funky-core'
+include 'funky-examples'
+
