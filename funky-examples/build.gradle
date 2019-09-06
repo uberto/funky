@@ -1,3 +1,5 @@
-//dependencies {
-//    implementation project(':funky-core')
-//}
+
+
+dependencies {
+    implementation project(':funky-core')
+}
