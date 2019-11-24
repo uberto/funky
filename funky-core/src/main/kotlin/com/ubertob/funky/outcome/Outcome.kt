@@ -4,7 +4,7 @@ package com.ubertob.funky.outcome
 sealed class  Outcome<out E: Error, out T: Any> {
 
 
-    fun <U: Any> map(f: (T) -> U): Outcome<E, U> =
+    fun <U: Any> mapSuccess(f: (T) -> U): Outcome<E, U> =
             when (this){
                 is Success -> Success(f(this.value))
                 is Failure -> this
@@ -29,9 +29,9 @@ sealed class  Outcome<out E: Error, out T: Any> {
 data class Success<T: Any>(val value: T): Outcome<Nothing, T>()
 data class Failure<E: Error>(val error: E): Outcome<E, Nothing>()
 
-fun <T: Any, U: Any, E: Error> Outcome<E, T>.lift(f: (T) -> U): (Outcome<E, T>) -> Outcome<E, U> = {this.map{f(it)}}
+fun <T: Any, U: Any, E: Error> Outcome<E, T>.lift(f: (T) -> U): (Outcome<E, T>) -> Outcome<E, U> = {this.mapSuccess{f(it)}}
 
-inline fun <T: Any, U: Any, E: Error> Outcome<E, T>.flatMap(f: (T) -> Outcome<E, U>): Outcome<E, U> =
+inline fun <T: Any, U: Any, E: Error> Outcome<E, T>.bindSuccess(f: (T) -> Outcome<E, U>): Outcome<E, U> =
         when (this) {
             is Success<T> -> f(value)
             is Failure<E> -> this
