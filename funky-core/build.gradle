@@ -1,3 +1,15 @@
+plugins {
+    id 'org.jetbrains.kotlin.jvm'
+}
 
+dependencies {
+    implementation "org.jetbrains.kotlin:kotlin-stdlib-jdk8"
 
-description = 'core functions'
+    testImplementation "org.junit.jupiter:junit-jupiter-api:$junitVersion"
+    testImplementation "dev.minutest:minutest:$minutestVersion"
+
+    testRuntimeOnly "org.junit.jupiter:junit-jupiter-engine:$junitVersion"
+    testRuntimeOnly "org.junit.platform:junit-platform-launcher:$junitLauncherVersion"
+
+    implementation "io.strikt:strikt-core:$striktVersion"
+}

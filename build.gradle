@@ -4,31 +4,29 @@ plugins {
 
 allprojects {
 
-    apply plugin: "kotlin"
-
     group 'com.ubertob.funky'
     version '1.0-SNAPSHOT'
 
+    ext {
+        junitVersion = "5.6.1"
+        minutestVersion = "1.11.0"
+        junitLauncherVersion = "1.6.1"
+        striktVersion = "0.25.0"
+    }
 
     wrapper {
-        gradleVersion = "5.6.2"
+        gradleVersion = "6.3.0"
     }
 
     repositories {
         mavenCentral()
+        jcenter()
     }
 
-    dependencies {
-        implementation "org.jetbrains.kotlin:kotlin-stdlib-jdk8"
-
-        testImplementation 'com.willowtreeapps.assertk:assertk-jvm:0.17'
-        testImplementation 'org.junit.jupiter:junit-jupiter-api:5.4.2'
-        testRuntimeOnly 'org.junit.jupiter:junit-jupiter-engine:5.4.2'
-    }
 
     test {
         useJUnitPlatform()
-        testLogging.showStandardStreams = true
+//        testLogging.showStandardStreams = true
     }
 
     compileKotlin {
