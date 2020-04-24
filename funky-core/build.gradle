@@ -1,5 +1,7 @@
 plugins {
     id 'org.jetbrains.kotlin.jvm'
+
+    id 'com.bmuschko.nexus' version '2.3.1'
 }
 
 dependencies {
@@ -12,4 +14,46 @@ dependencies {
     testRuntimeOnly "org.junit.platform:junit-platform-launcher:$junitLauncherVersion"
 
     implementation "io.strikt:strikt-core:$striktVersion"
+}
+
+archivesBaseName = 'funky-core'
+
+modifyPom {
+    project {
+        name 'funky'
+        description 'A Lightweigh Functional Library for Kotlin'
+        url 'https://github.com/uberto/funky'
+        inceptionYear '2020'
+        scm {
+            url 'https://github.com/uberto/funky'
+            connection 'https://github.com/uberto/funky.git'
+            developerConnection 'git@github.com:uberto/funky.git'
+        }
+        licenses {
+            license {
+                name 'The Apache Software License, Version 2.0'
+                url 'http://www.apache.org/licenses/LICENSE-2.0.txt'
+                distribution 'repo'
+            }
+        }
+        developers {
+            developer {
+                id 'UbertoBarbini'
+                name 'Uberto Barbini'
+                email 'uberto.gama@gmail.com'
+            }
+        }
+    }
+}
+
+extraArchive {
+    sources = true
+    tests = false
+    javadoc = true
+}
+
+nexus {
+    sign = true
+    repositoryUrl = 'https://oss.sonatype.org/service/local/staging/deploy/maven2/'
+    snapshotRepositoryUrl = 'https://oss.sonatype.org/content/repositories/snapshots/'
 }
