@@ -13,3 +13,12 @@ dependencies {
 
     implementation "io.strikt:strikt-core:$striktVersion"
 }
+
+tasks {
+    test {
+        useJUnitPlatform()
+        testLogging {
+            events "skipped", "failed", "passed"
+        }
+    }
+}
