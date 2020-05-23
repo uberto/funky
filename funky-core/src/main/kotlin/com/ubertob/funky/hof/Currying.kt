@@ -9,4 +9,9 @@ fun <A, B, C, D, E> ((A, B, C, D) -> E).curry(): (A) -> (B) -> (C) -> (D) -> E =
 
 infix fun <A, B> ((A) -> B).`@`(a: A): B = this(a)  //  `@`(this, a)
 
-infix fun <A, B, C> ((A, B) -> C).apply(b: B): (A) -> C = { a -> this(a, b) }
+infix fun <A, B, C> ((A, B) -> C).applyLast(b: B): (A) -> C = { a -> this(a, b) }
+infix fun <A, B, C, D> ((A, B, C) -> D).applyLast3(c: C): (A, B) -> D = { a, b -> this(a, b, c) }
+
+infix fun <A, B, C> ((A, B) -> C).applyFirst(a: A): (B) -> C = { b -> this(a, b) }
+
+infix fun <A, B, C> (A.(B) -> C).applyThis(b: B): (A) -> C = { a -> a.this(b) }
