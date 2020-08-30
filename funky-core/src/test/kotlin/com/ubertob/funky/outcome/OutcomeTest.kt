@@ -16,9 +16,9 @@ internal class OutcomeTest {
 
 
     @Test
-    fun bindingComposition() {
+    fun singleBinding() {
 
-        val res = Do {
+        val res = OutcomeDo {
 
             sendEmailUser("123@a.com", "bye bye")
         }
@@ -26,9 +26,37 @@ internal class OutcomeTest {
 
 
     @Test
+    fun bindingComposition0() {
+
+        val r =
+                getUser(123)
+                        .flatmap { u ->
+                            getMailText(u.name)
+                                    .flatmap { t ->
+                                        sendEmailUser(u.email, t)
+                                    }
+                        }
+    }
+
+    @Test
+    fun bindingComposition1() {
+
+        val r = fun(): Outcome<OutcomeError, Unit> {
+
+            val u = getUser(123).onFailure { return it.asFailure() }
+            val t = getMailText(u.name).onFailure { return it.asFailure() }
+            val e = sendEmailUser(u.email, t).onFailure { return it.asFailure() }
+            return e.asSuccess()
+
+        }
+
+
+    }
+
+    @Test
     fun bindingComposition2() {
 
-        val res = Do {
+        val res = OutcomeDo {
 
             val u = getUser(123)()
             val t = getMailText(u.name)()
@@ -41,7 +69,7 @@ internal class OutcomeTest {
     @Test
     fun bindingComposition3() {
 
-        val res = Do {
+        val res = OutcomeDo {
 
             val u = +getUser(123)
             val t = +getMailText(u.name)
@@ -50,31 +78,44 @@ internal class OutcomeTest {
         }.result
     }
 
+    @Test
+    fun bindingComposition4() {
 
-    class Do<T : Any>(val f: Do<*>.() -> T) {
+        val res = OutcomeDo {
 
-        operator fun <E : OutcomeError, T : Any> Outcome<E, T>.unaryPlus(): T =
-                when (this) {
-                    is Success -> value
-                    is Failure -> throw WithMonadsException(error)
-                }
+            val (u) = getUser(123)
+            val (t) = getMailText(u.name)
+            val (r) = sendEmailUser(u.email, t)
 
-        operator fun <E : OutcomeError, T : Any> Outcome<E, T>.invoke(): T =
-                when (this) {
-                    is Success -> value
-                    is Failure -> throw WithMonadsException(error)
-                }
-
-        data class WithMonadsException(val error: OutcomeError) : Exception()
-
-        val result: Outcome<OutcomeError, T>
-            get() =
-                try {
-                    f().asSuccess()
-                } catch (e: WithMonadsException) {
-                    e.error.asFailure()
-                }
-
+        }.result
     }
 
+    fun <T : Any, U : Any, E : OutcomeError> Outcome<E, T>.flatmap(f: (T) -> Outcome<E, U>): Outcome<E, U> = this.bindSuccess(f)
+
+//
+//    @Test
+//    fun applyComposition() {
+//
+//        val json= """
+//            {
+//            "a": 5
+//            "b": "bee"
+//            "c": { "name":"adam"}
+//            }
+//        """.trimIndent()
+//        val res = json.mapTo(::Abc,
+//                "a".asInt(),
+//                 "b".asString(),
+//                 "c".asObj<Named>()
+//        )
+//        }
+//    }
+
+//data class Named(val name: String)
+//data class Abc(val a: Int, val b: String, val c: Named)
+//
+//fun <A: Any,B: Any,C: Any,D:Any> Mapper(cons: (A,B,C) ->D, p1: (String) -> Outcome<*, A>, p2: (String) -> Outcome<*, B>, p3: (String) -> Outcome<*, C> ): Outcome<OutcomeError, D> =
+//       cons(p1, p2, p3)
+//
+//
 }
