@@ -2,18 +2,23 @@ package com.ubertob.funky.outcome
 
 sealed class Outcome<out E : OutcomeError, out T> {
 
-    fun <U> mapSuccess(f: (T) -> U): Outcome<E, U> =
+    fun <U> transform(f: (T) -> U): Outcome<E, U> =
             when (this) {
                 is Success -> Success(f(this.value))
                 is Failure -> this
             }
 
-    fun <F : OutcomeError> mapFailure(f: (E) -> F): Outcome<F, T> =
+    fun <F : OutcomeError> transformFailure(f: (E) -> F): Outcome<F, T> =
             when (this) {
                 is Success -> this
                 is Failure -> Failure(f(this.error))
             }
 
+    fun orThrow(): T =
+            when (this) {
+                is Success -> value
+                is Failure -> throw OutcomeException(error)
+            }
 
     companion object {
         fun <T> tryThis(block: () -> T): Outcome<ThrowableError, T> =
@@ -28,9 +33,9 @@ sealed class Outcome<out E : OutcomeError, out T> {
 data class Success<T>(val value: T) : Outcome<Nothing, T>()
 data class Failure<E : OutcomeError>(val error: E) : Outcome<E, Nothing>()
 
-fun <T, U, E : OutcomeError> Outcome<E, T>.lift(f: (T) -> U): (Outcome<E, T>) -> Outcome<E, U> = { this.mapSuccess { f(it) } }
+fun <T, U, E : OutcomeError> Outcome<E, T>.lift(f: (T) -> U): (Outcome<E, T>) -> Outcome<E, U> = { this.transform { f(it) } }
 
-inline fun <T, U, E : OutcomeError> Outcome<E, T>.bindSuccess(f: (T) -> Outcome<E, U>): Outcome<E, U> =
+inline fun <T, U, E : OutcomeError> Outcome<E, T>.bind(f: (T) -> Outcome<E, U>): Outcome<E, U> =
         when (this) {
             is Success<T> -> f(value)
             is Failure<E> -> this
@@ -70,6 +75,10 @@ inline fun <T, E : OutcomeError> Outcome<E, T>.failIf(predicate: (T) -> Boolean,
             is Failure<E> -> this
         }
 
+fun <E : OutcomeError, T : Any> Iterable<Outcome<E, T>>.sequence(): Outcome<E, List<T>> =
+        fold(emptyList<T>().asSuccess()) { acc: Outcome<E, Iterable<T>>, e: Outcome<E, T> ->
+            acc.bind { list -> e.transform { list + it } }
+        }
 
 interface OutcomeError {
     val msg: String
@@ -79,6 +88,8 @@ data class ThrowableError(val t: Throwable) : OutcomeError {
     override val msg: String
         get() = t.message.orEmpty()
 }
+
+data class OutcomeException(val error: OutcomeError) : RuntimeException()
 
 fun <T : OutcomeError> T.asFailure(): Outcome<T, Nothing> = Failure(this)
 fun <T> T.asSuccess(): Outcome<Nothing, T> = Success(this)

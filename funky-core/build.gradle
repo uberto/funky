@@ -5,7 +5,7 @@ plugins {
 
 
 dependencies {
-  implementation "org.jetbrains.kotlin:kotlin-stdlib-jdk8"
+    implementation "org.jetbrains.kotlin:kotlin-stdlib-jdk8"
 
     testImplementation "org.junit.jupiter:junit-jupiter-api:$junitVersion"
 

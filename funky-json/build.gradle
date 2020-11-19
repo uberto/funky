@@ -8,6 +8,7 @@ dependencies {
     implementation project(":funky-core")
 
     implementation "org.jetbrains.kotlin:kotlin-stdlib-jdk8"
+    implementation 'com.beust:klaxon:5.0.1'
 
     testImplementation "org.junit.jupiter:junit-jupiter-api:$junitVersion"
 

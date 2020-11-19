@@ -90,7 +90,8 @@ internal class OutcomeTest {
         }.result
     }
 
-    fun <T : Any, U : Any, E : OutcomeError> Outcome<E, T>.flatmap(f: (T) -> Outcome<E, U>): Outcome<E, U> = this.bindSuccess(f)
+    fun <T : Any, U : Any, E : OutcomeError> Outcome<E, T>.flatmap(f: (T) -> Outcome<E, U>): Outcome<E, U> =
+        this.bind(f)
 
 //
 //    @Test
