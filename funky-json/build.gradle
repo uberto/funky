@@ -5,7 +5,9 @@ plugins {
 
 
 dependencies {
-  implementation "org.jetbrains.kotlin:kotlin-stdlib-jdk8"
+    implementation project(":funky-core")
+
+    implementation "org.jetbrains.kotlin:kotlin-stdlib-jdk8"
 
     testImplementation "org.junit.jupiter:junit-jupiter-api:$junitVersion"
 
@@ -29,8 +31,8 @@ archivesBaseName = 'funky-core'
 
 modifyPom {
     project {
-        name 'funky'
-        description 'A Lightweigh Functional Library for Kotlin'
+        name 'funky-json'
+        description 'A Lightweigh Functional Library for Kotlin - The Json bit'
         url 'https://github.com/uberto/funky'
         inceptionYear '2020'
         scm {
