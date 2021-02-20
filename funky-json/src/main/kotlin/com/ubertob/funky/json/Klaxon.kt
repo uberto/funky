@@ -19,7 +19,7 @@ fun fromKlaxon(map: MutableMap<String, Any?>, path: List<String>): Outcome<JsonE
         }
     }.toMap().let { fieldMap -> JsonNodeObject(fieldMap, path) }.asSuccess()
 
-private fun valueToNode(value: Any, path: List<String>): Outcome<JsonError, AbstractJsonNode> {
+private fun valueToNode(value: Any, path: List<String>): Outcome<JsonError, JsonNode> {
     return when (value) {
         is Int -> JsonNodeInt(value, path).asSuccess()
         is Double -> JsonNodeDouble(value, path).asSuccess()
@@ -34,11 +34,11 @@ private fun valueToNode(value: Any, path: List<String>): Outcome<JsonError, Abst
 }
 
 fun toKlaxon(node: JsonNodeObject): Map<String, Any?> =
-    node.fieldMap.entries.map { entry: Map.Entry<String, AbstractJsonNode> ->
+    node.fieldMap.entries.map { entry: Map.Entry<String, JsonNode> ->
         entry.key to nodeToValue(entry.value)
     }.toMap()
 
-private fun nodeToValue(node: AbstractJsonNode): Any? {
+private fun nodeToValue(node: JsonNode): Any? {
     return when (node) {
         is JsonNodeBoolean -> node.value
         is JsonNodeString -> node.text
@@ -52,10 +52,10 @@ private fun nodeToValue(node: AbstractJsonNode): Any? {
 }
 
 
-fun <T : Any> fromJsonString(json: String, conv: JProtocol<T>): Outcome<JsonError, T> =
+fun <T : Any> fromJsonString(json: String, conv: JAny<T>): Outcome<JsonError, T> =
     klaxonConvert(json)
         .bind { conv.deserialize(it) }
 
-fun <T : Any> toJsonString(value: T, conv: JProtocol<T>): String =
+fun <T : Any> toJsonString(value: T, conv: JAny<T>): String =
     JsonObject(toKlaxon(conv.serialize(value))).toJsonString()
 

@@ -10,7 +10,7 @@ import strikt.api.expect
 import strikt.api.expectThat
 import strikt.assertions.isEqualTo
 
-class JsonAdjunctionTest {
+class BiDiJsonTest {
 
     @Test
     fun `JsonNode String`() {
@@ -42,6 +42,17 @@ class JsonAdjunctionTest {
         val json = JInt.build(expected)
 
         val actual = JInt.extract(json).shouldSucceed()
+
+        expectThat(actual).isEqualTo(expected)
+    }
+
+    @Test
+    fun `Json Long`() {
+
+        val expected = 124L
+        val json = JLong.build(expected)
+
+        val actual = JLong.extract(json).shouldSucceed()
 
         expectThat(actual).isEqualTo(expected)
     }
@@ -111,11 +122,11 @@ class JsonAdjunctionTest {
     fun `Customer serialize and deserialize`() {
 
         val customer = Customer(123, "abc")
-        val jsonNodeObject = JCustomer.serialize(customer)
+        val jsonNodeObject = JCustomer.build(customer)
 
         println(jsonNodeObject)
 
-        val actual = JCustomer.deserialize(jsonNodeObject).shouldSucceed()
+        val actual = JCustomer.extract(jsonNodeObject).shouldSucceed()
 
         expectThat(actual).isEqualTo(customer)
     }
@@ -240,7 +251,7 @@ class JsonAdjunctionTest {
 
 data class Customer(val id: Int, val name: String)
 
-object JCustomer : JProtocol<Customer>() {
+object JCustomer : JAny<Customer>() {
 
     val id by JField(Customer::id, JInt)
     val name by JField(Customer::name, JString)
@@ -255,7 +266,7 @@ object JCustomer : JProtocol<Customer>() {
 
 data class Product(val id: Int, val shortDesc: String, val longDesc: String, val price: Double?)
 
-object JProduct : JProtocol<Product>() {
+object JProduct : JAny<Product>() {
 
     val id by JField(Product::id, JInt)
     val long_description by JField(Product::longDesc, JString)
@@ -283,7 +294,7 @@ data class Invoice(
     val total: Double
 )
 
-object JInvoice : JProtocol<Invoice>() {
+object JInvoice : JAny<Invoice>() {
     val id by JField(Invoice::id, JStringWrapper(::InvoiceId))
     val vat by JField(Invoice::vat, JBoolean, jsonFieldName = "vat-to-pay")
     val customer by JField(Invoice::customer, JCustomer)
@@ -311,6 +322,8 @@ fun <E : OutcomeError> Outcome<E, *>.shouldFail(): E =
 
 
 //todo
+// parsing arrays, and single values
+// removing klaxon
 // add passing node path in serialization as well
 // add pre-check for multiple failures in parsing
 // add test for multiple reuse

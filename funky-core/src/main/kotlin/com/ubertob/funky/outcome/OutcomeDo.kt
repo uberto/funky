@@ -28,7 +28,7 @@ class OutcomeDo<T : Any>(val f: OutcomeDo<*>.() -> T) {
             try {
                 f().asSuccess()
             } catch (e: WithMonadsException) {
-                e.error.asFailure()
+                 e.error.asFailure()
             }
 
 }
