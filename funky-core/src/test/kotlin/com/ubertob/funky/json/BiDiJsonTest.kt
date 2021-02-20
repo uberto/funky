@@ -1,15 +1,11 @@
 package com.ubertob.funky.json
 
-import com.ubertob.funky.outcome.Outcome
-import com.ubertob.funky.outcome.OutcomeError
-import com.ubertob.funky.outcome.onFailure
-import com.ubertob.funky.outcome.recover
+import com.ubertob.funky.shouldSucceed
 import org.junit.jupiter.api.Test
-import org.junit.jupiter.api.fail
 import strikt.api.expectThat
 import strikt.assertions.isEqualTo
 
-class JsonFTest {
+class BiDiJsonTest {
 
     @Test
     fun `JsonNode String`() {
@@ -46,10 +42,4 @@ class JsonFTest {
     }
 
 
-    fun <T : Any> Outcome<*, T>.shouldSucceed(): T =
-        this.onFailure { fail(it.msg) }
-
-    fun <E : OutcomeError> Outcome<E, *>.shouldFail(): E =
-        this.transform { fail("Should have failed but was $it") }
-            .recover { it }
 }

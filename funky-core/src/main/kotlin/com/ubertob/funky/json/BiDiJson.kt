@@ -21,15 +21,15 @@ data class JsonError(val node: JsonNode?, val reason: String) : OutcomeError {
 typealias JsonOutcome<T> = Outcome<JsonError, T>
 
 
-interface BiDiJson<T> {
-    fun fromJson(node: JsonNode): JsonOutcome<T>
-    fun toJson(value: T): JsonNode
+interface BiDiJson<T, JN : JsonNode> {
+    fun fromJson(node: JN): JsonOutcome<T>
+    fun toJson(value: T): JN
 }
 
 typealias NodeWriter<T> = (JsonNodeObject, T) -> JsonNodeObject
 typealias NodeReader<T> = (JsonNodeObject) -> JsonOutcome<T>
 
-abstract class JAny<T : Any> : BiDiJson<T> {
+abstract class JAny<T : Any> : BiDiJson<T, JsonNodeObject> {
 
     private val nodeWriters: AtomicReference<Set<NodeWriter<T>>> = AtomicReference(emptySet())
     private val nodeReaders: AtomicReference<Set<NodeReader<*>>> = AtomicReference(emptySet())
@@ -42,10 +42,9 @@ abstract class JAny<T : Any> : BiDiJson<T> {
         nodeReaders.getAndUpdate { set -> set + nodeReader }
     }
 
-    override fun fromJson(node: JsonNode): Outcome<JsonError, T> = node.asObject(this::deserialize)
+    override fun fromJson(node: JsonNodeObject): Outcome<JsonError, T> = node.asObject(::deserialize)
 
-    override fun toJson(value: T): JsonNode =
-        serialize(value)
+    override fun toJson(value: T): JsonNodeObject = serialize(value)
 
     fun serialize(value: T): JsonNodeObject = nodeWriters.get()
         .map { nw -> { jno: JsonNodeObject -> nw(jno, value) } }.fold(JsonNodeObject(emptyMap())) { acc, setter ->
@@ -92,61 +91,59 @@ abstract class JAny<T : Any> : BiDiJson<T> {
 
 }
 
-object JBoolean : BiDiJson<Boolean> {
-    override fun fromJson(node: JsonNode): Outcome<JsonError, Boolean> = node.asBoolean()
+object JBoolean : BiDiJson<Boolean, JsonNodeBoolean> {
 
-    override fun toJson(value: Boolean): JsonNode = JsonNodeBoolean(value)
-
-}
-
-object JString : BiDiJson<String> {
-    override fun fromJson(node: JsonNode): Outcome<JsonError, String> = node.asText()
-
-    override fun toJson(value: String): JsonNode = JsonNodeString(value)
+    override fun fromJson(node: JsonNodeBoolean): Outcome<JsonError, Boolean> = node.asBoolean()
+    override fun toJson(value: Boolean): JsonNodeBoolean = JsonNodeBoolean(value)
 
 }
 
-object JInt : BiDiJson<Int> {
-    override fun fromJson(node: JsonNode): Outcome<JsonError, Int> = node.asInt()
+object JString : BiDiJson<String, JsonNodeString> {
 
-    override fun toJson(value: Int): JsonNode = JsonNodeInt(value)
-}
-
-
-object JLong : BiDiJson<Long> {
-    override fun fromJson(node: JsonNode): Outcome<JsonError, Long> = node.asLong()
-
-    override fun toJson(value: Long): JsonNode = JsonNodeLong(value)
-}
-
-object JDouble : BiDiJson<Double> {
-    override fun fromJson(node: JsonNode): Outcome<JsonError, Double> = node.asDouble()
-
-    override fun toJson(value: Double): JsonNode = JsonNodeDouble(value)
-}
-
-data class JStringWrapper<T : StringWrapper>(val cons: (String) -> T) : BiDiJson<T> {
-
-    override fun fromJson(node: JsonNode): Outcome<JsonError, T> =
-        node.asText().transform(cons)
-
-    override fun toJson(value: T): JsonNode = JsonNodeString(value.raw)
+    override fun fromJson(node: JsonNodeString): Outcome<JsonError, String> = node.asText()
+    override fun toJson(value: String): JsonNodeString = JsonNodeString(value)
 
 }
 
-data class JArray<T : Any>(val helper: BiDiJson<T>) : BiDiJson<List<T>> {
-    override fun fromJson(node: JsonNode): Outcome<JsonError, List<T>> = mapFrom(node, helper::fromJson)
+object JInt : BiDiJson<Int, JsonNodeInt> {
 
-    override fun toJson(value: List<T>): JsonNode = mapToJson(value, helper::toJson)
+    override fun fromJson(node: JsonNodeInt): Outcome<JsonError, Int> = node.asInt()
+    override fun toJson(value: Int): JsonNodeInt = JsonNodeInt(value)
+}
 
-    private fun <T : Any> mapToJson(objs: List<T>, f: (T) -> JsonNode): JsonNode =
+
+object JLong : BiDiJson<Long, JsonNodeLong> {
+
+    override fun fromJson(node: JsonNodeLong): Outcome<JsonError, Long> = node.asLong()
+    override fun toJson(value: Long): JsonNodeLong = JsonNodeLong(value)
+}
+
+object JDouble : BiDiJson<Double, JsonNodeDouble> {
+
+    override fun fromJson(node: JsonNodeDouble): Outcome<JsonError, Double> = node.asDouble()
+    override fun toJson(value: Double): JsonNodeDouble = JsonNodeDouble(value)
+}
+
+data class JStringWrapper<T : StringWrapper>(val cons: (String) -> T) : BiDiJson<T, JsonNodeString> {
+
+    override fun fromJson(node: JsonNodeString): Outcome<JsonError, T> = node.asText().transform(cons)
+    override fun toJson(value: T): JsonNodeString = JsonNodeString(value.raw)
+
+}
+
+data class JArray<T : Any, JN : JsonNode>(val helper: BiDiJson<T, JN>) : BiDiJson<List<T>, JsonNodeArray<JN>> {
+
+    override fun fromJson(node: JsonNodeArray<JN>): Outcome<JsonError, List<T>> = mapFrom(node, helper::fromJson)
+    override fun toJson(value: List<T>): JsonNodeArray<JN> = mapToJson(value, helper::toJson)
+
+    private fun <T : Any> mapToJson(objs: List<T>, f: (T) -> JN): JsonNodeArray<JN> =
         JsonNodeArray(objs.map(f))
 
     private fun <T : Any> mapFrom(
-        node: JsonNode,
-        f: (JsonNode) -> Outcome<JsonError, T>
+        node: JsonNodeArray<JN>,
+        f: (JN) -> Outcome<JsonError, T>
     ): Outcome<JsonError, List<T>> =
-        node.asArray().bind { nodes -> nodes.map { n: JsonNode -> f(n) }.sequence() }
+        node.asArray<JN>().bind { nodes -> nodes.map { n: JN -> f(n) }.sequence() }
 }
 
 
@@ -159,11 +156,16 @@ sealed class JsonProperty<T> {
 data class JsonParsingException(val error: JsonError) : RuntimeException()
 
 
-data class JsonPropMandatory<T : Any>(override val propName: String, val jf: BiDiJson<T>) : JsonProperty<T>() {
+data class JsonPropMandatory<T : Any, JN : JsonNode>(override val propName: String, val jf: BiDiJson<T, JN>) :
+    JsonProperty<T>() {
 
     override fun getter(node: JsonNodeObject): Outcome<JsonError, T> =
         node.fieldMap[propName]
-            ?.let { idn -> jf.fromJson(idn) }
+            ?.let { idn ->
+                tryThis { jf.fromJson(idn as JN) }
+                    .bind { it } //todo add join
+                    .transformFailure { JsonError(idn, it.msg) }
+            }
             ?: JsonError(node, "Not found $propName").asFailure()
 
     override fun setter(value: T): (JsonNodeObject) -> JsonNodeObject =
@@ -173,11 +175,16 @@ data class JsonPropMandatory<T : Any>(override val propName: String, val jf: BiD
 }
 
 
-data class JsonPropOptional<T : Any>(override val propName: String, val jf: BiDiJson<T>) : JsonProperty<T?>() {
+data class JsonPropOptional<T : Any, JN : JsonNode>(override val propName: String, val jf: BiDiJson<T, JN>) :
+    JsonProperty<T?>() {
 
     override fun getter(node: JsonNodeObject): Outcome<JsonError, T?> =
         node.fieldMap[propName]
-            ?.let { idn -> jf.fromJson(idn) }
+            ?.let { idn ->
+                tryThis { jf.fromJson(idn as JN) }
+                    .bind { it }//todo add join
+                    .transformFailure { JsonError(idn, it.msg) }
+            }
             ?: null.asSuccess()
 
     override fun setter(value: T?): (JsonNodeObject) -> JsonNodeObject =
@@ -210,7 +217,7 @@ sealed class JFieldBase<T, PT : Any>
 
 class JField<T : Any, PT : Any>(
     override val binder: (PT) -> T,
-    private val biDiJson: BiDiJson<T>,
+    private val biDiJson: BiDiJson<T, *>,
     private val jsonFieldName: String? = null
 ) : JFieldBase<T, PT>() {
 
@@ -221,7 +228,7 @@ class JField<T : Any, PT : Any>(
 
 class JFieldMaybe<T : Any, PT : Any>(
     override val binder: (PT) -> T?,
-    private val biDiJson: BiDiJson<T>,
+    private val biDiJson: BiDiJson<T, *>,
     private val jsonFieldName: String? = null
 ) : JFieldBase<T?, PT>() {
 

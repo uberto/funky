@@ -44,7 +44,7 @@ private fun nodeToValue(node: JsonNode): Any? {
         is JsonNodeString -> node.text
         is JsonNodeInt -> node.num
         is JsonNodeDouble -> node.num
-        is JsonNodeArray -> node.values.map(::nodeToValue)
+        is JsonNodeArray<*> -> node.values.map(::nodeToValue)
         is JsonNodeObject -> toKlaxon(node)
         is JsonNodeNull -> null
         is JsonNodeLong -> node.num

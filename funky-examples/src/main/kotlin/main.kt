@@ -8,7 +8,6 @@ fun main() {
 
     println(reversed.joinToString(separator = " "))
 
-    java.util.ListIterator
 }
 
 fun fizzbuzzSeq(): Sequence<String> =

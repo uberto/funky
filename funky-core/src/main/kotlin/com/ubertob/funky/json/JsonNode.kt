@@ -48,9 +48,9 @@ sealed class JsonNode {
             else -> JsonError(this, "Expected Object but found $this").asFailure()
         }
 
-    fun asArray(): Outcome<JsonError, List<JsonNode>> =
+    fun <JN : JsonNode> asArray(): Outcome<JsonError, List<JN>> =
         when (this) {
-            is JsonNodeArray -> (this.values).asSuccess()
+            is JsonNodeArray<*> -> (values as List<JN>).asSuccess()
             else -> JsonError(this, "Expected Array but found $this").asFailure()
         }
 
@@ -63,7 +63,7 @@ sealed class JsonNode {
 
 }
 
-data class JsonNodeArray(val values: List<JsonNode>, override val path: List<String> = emptyList()) :
+data class JsonNodeArray<JN : JsonNode>(val values: List<JN>, override val path: List<String> = emptyList()) :
     JsonNode()
 
 data class JsonNodeBoolean(val value: Boolean, override val path: List<String> = emptyList()) : JsonNode()
@@ -71,13 +71,11 @@ data class JsonNodeDouble(val num: Double, override val path: List<String> = emp
 data class JsonNodeInt(val num: Int, override val path: List<String> = emptyList()) : JsonNode()
 data class JsonNodeLong(val num: Long, override val path: List<String> = emptyList()) : JsonNode()
 data class JsonNodeNull(override val path: List<String> = emptyList()) : JsonNode()
+data class JsonNodeString(val text: String, override val path: List<String> = emptyList()) : JsonNode()
 data class JsonNodeObject(val fieldMap: Map<String, JsonNode>, override val path: List<String> = emptyList()) :
     JsonNode() {
 
     operator fun <T> JsonProperty<T>.unaryPlus(): T =
         getter(this@JsonNodeObject)
             .onFailure { throw JsonParsingException(it) }
-
 }
-
-data class JsonNodeString(val text: String, override val path: List<String> = emptyList()) : JsonNode()
