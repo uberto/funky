@@ -1,4 +1,6 @@
 import LexerState.*
+import com.ubertob.funky.json.TokensStream
+import com.ubertob.funky.json.peekingIterator
 
 enum class LexerState {
     OutString, InString, Escaping //todo Unicode?
@@ -6,7 +8,7 @@ enum class LexerState {
 
 class JsonLexer {
 
-    fun tokenize(jsonStr: String): Sequence<String> =
+    fun tokenize(jsonStr: String): TokensStream =
         sequence {
             val currWord = StringBuilder()
             var state = OutString
@@ -51,7 +53,7 @@ class JsonLexer {
                 }
             }
             yieldIfNotEmpty(currWord)
-        }
+        }.peekingIterator()
 
     private suspend fun SequenceScope<String>.yieldIfNotEmpty(currWord: StringBuilder) {
         if (currWord.isNotEmpty()) {

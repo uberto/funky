@@ -8,7 +8,6 @@ import strikt.assertions.isEqualTo
 
 class BiDiJsonTest {
 
-
     @Test
     fun `JsonNode String`() {
         val expected = "abc"

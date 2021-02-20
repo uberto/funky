@@ -14,7 +14,7 @@ class JsonLexerTest {
         val json = "abc"
         val seq = lexer.tokenize(json)
 
-        expectThat(seq.toList()).isEqualTo(listOf(json))
+        expectThat(seq.asSequence().toList()).isEqualTo(listOf(json))
     }
 
     @Test
@@ -22,7 +22,7 @@ class JsonLexerTest {
         val json = "  abc   def\ngh\tijk\r lmn \n\n opq"
         val seq = lexer.tokenize(json)
 
-        expectThat(seq.toList()).isEqualTo(
+        expectThat(seq.asSequence().toList()).isEqualTo(
             listOf(
                 "abc", "def", "gh", "ijk", "lmn", "opq"
             )
@@ -34,7 +34,7 @@ class JsonLexerTest {
         val json = "[]{}:,  [a,b,c]  {d:e}"
         val seq = lexer.tokenize(json)
 
-        expectThat(seq.toList()).isEqualTo(
+        expectThat(seq.asSequence().toList()).isEqualTo(
             listOf(
                 "[", "]", "{", "}", ":", ",", "[", "a", ",", "b", ",", "c", "]", "{", "d", ":", "e", "}"
             )
@@ -48,7 +48,7 @@ class JsonLexerTest {
         """.trimIndent()
         val seq = lexer.tokenize(json)
 
-        expectThat(seq.toList()).isEqualTo(
+        expectThat(seq.asSequence().toList()).isEqualTo(
             listOf(
                 "{", "\"", "abc", "\"", ":", "123", "}"
             )
@@ -62,7 +62,7 @@ class JsonLexerTest {
         """.trimIndent()
         val seq = lexer.tokenize(json)
 
-        expectThat(seq.toList()).isEqualTo(
+        expectThat(seq.asSequence().toList()).isEqualTo(
             listOf(
                 "{", "\"", "abc", "\"", ":", "\"", "abc\"\\ \n}", "\"", "}"
             )

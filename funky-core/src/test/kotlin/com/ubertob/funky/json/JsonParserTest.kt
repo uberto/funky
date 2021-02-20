@@ -181,12 +181,15 @@ class JsonParserTest {
     @Test
     fun `parse array`() {
 
-        val jsonString = JsonNodeNull().render()
+        val jsonString = """
+            ["abc", "def"]
+        """.trimIndent()
 
         val tokens = jsonLexer.tokenize(jsonString)
 
-        parseJsonNodeNull(tokens).expectSuccess()
+        val nodes = parseJsonNodeArray(tokens) { tokens -> parseJsonNodeString(tokens).expectSuccess() }.expectSuccess()
 
+        expectThat(nodes.render()).isEqualTo("""["abc", "def"]""")
     }
     //todo array and object
 }
