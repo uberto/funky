@@ -1,6 +1,6 @@
 package com.ubertob.funky.json
 
-import com.ubertob.funky.shouldSucceed
+import com.ubertob.funky.expectSuccess
 import org.junit.jupiter.api.Test
 import strikt.api.expectThat
 import strikt.assertions.isEqualTo
@@ -13,7 +13,7 @@ class BiDiJsonTest {
         val expected = "abc"
         val json = JString.toJsonNode(expected)
 
-        val actual = JString.fromJsonNode(json).shouldSucceed()
+        val actual = JString.fromJsonNode(json).expectSuccess()
 
         expectThat(actual).isEqualTo(expected)
     }
@@ -25,7 +25,7 @@ class BiDiJsonTest {
         val expected = 123.0
         val json = JDouble.toJsonNode(expected)
 
-        val actual = JDouble.fromJsonNode(json).shouldSucceed()
+        val actual = JDouble.fromJsonNode(json).expectSuccess()
 
         expectThat(actual).isEqualTo(expected)
     }
@@ -36,7 +36,7 @@ class BiDiJsonTest {
         val expected = 124
         val json = JInt.toJsonNode(expected)
 
-        val actual = JInt.fromJsonNode(json).shouldSucceed()
+        val actual = JInt.fromJsonNode(json).expectSuccess()
 
         expectThat(actual).isEqualTo(expected)
     }

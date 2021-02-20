@@ -12,7 +12,7 @@ class BiDiJsonTest {
         val expected = "abc"
         val json = JString.toJsonNode(expected)
 
-        val actual = JString.fromJsonNode(json).shouldSucceed()
+        val actual = JString.fromJsonNode(json).expectSuccess()
 
         expectThat(actual).isEqualTo(expected)
     }
@@ -24,7 +24,7 @@ class BiDiJsonTest {
         val expected = 123.0
         val json = JDouble.toJsonNode(expected)
 
-        val actual = JDouble.fromJsonNode(json).shouldSucceed()
+        val actual = JDouble.fromJsonNode(json).expectSuccess()
 
         expectThat(actual).isEqualTo(expected)
     }
@@ -35,7 +35,7 @@ class BiDiJsonTest {
         val expected = 124
         val json = JInt.toJsonNode(expected)
 
-        val actual = JInt.fromJsonNode(json).shouldSucceed()
+        val actual = JInt.fromJsonNode(json).expectSuccess()
 
         expectThat(actual).isEqualTo(expected)
     }
@@ -46,7 +46,7 @@ class BiDiJsonTest {
         val expected = 124L
         val json = JLong.toJsonNode(expected)
 
-        val actual = JLong.fromJsonNode(json).shouldSucceed()
+        val actual = JLong.fromJsonNode(json).expectSuccess()
 
         expectThat(actual).isEqualTo(expected)
     }
@@ -57,7 +57,7 @@ class BiDiJsonTest {
         val expected = Customer(123, "abc")
         val json = JCustomer.toJsonNode(expected)
 
-        val actual = JCustomer.fromJsonNode(json).shouldSucceed()
+        val actual = JCustomer.fromJsonNode(json).expectSuccess()
 
         expectThat(actual).isEqualTo(expected)
     }
@@ -76,7 +76,7 @@ class BiDiJsonTest {
 
         val node = jsonUserArray.toJsonNode(expected)
 
-        val actual = jsonUserArray.fromJsonNode(node).shouldSucceed()
+        val actual = jsonUserArray.fromJsonNode(node).expectSuccess()
 
         expectThat(actual).isEqualTo(expected)
     }
@@ -90,8 +90,8 @@ class BiDiJsonTest {
         val toothpasteJson = JProduct.toJsonNode(toothpaste)
         val offerJson = JProduct.toJsonNode(offer)
 
-        val actualToothpaste = JProduct.fromJsonNode(toothpasteJson).shouldSucceed()
-        val actualOffer = JProduct.fromJsonNode(offerJson).shouldSucceed()
+        val actualToothpaste = JProduct.fromJsonNode(toothpasteJson).expectSuccess()
+        val actualOffer = JProduct.fromJsonNode(offerJson).expectSuccess()
 
         expect {
             that(actualToothpaste).isEqualTo(toothpaste)
@@ -106,7 +106,7 @@ class BiDiJsonTest {
 
         val json = JInvoice.toJsonNode(invoice)
 
-        val actual = JInvoice.fromJsonNode(json).shouldSucceed()
+        val actual = JInvoice.fromJsonNode(json).expectSuccess()
 
         expectThat(actual).isEqualTo(invoice)
     }
@@ -120,7 +120,7 @@ class BiDiJsonTest {
 
         println(jsonNodeObject)
 
-        val actual = JCustomer.fromJsonNode(jsonNodeObject).shouldSucceed()
+        val actual = JCustomer.fromJsonNode(jsonNodeObject).expectSuccess()
 
         expectThat(actual).isEqualTo(customer)
     }
@@ -133,7 +133,7 @@ class BiDiJsonTest {
 
         println(json)
 
-        val actual = fromJsonString(json, JCustomer).shouldSucceed()
+        val actual = fromJsonString(json, JCustomer).expectSuccess()
 
         expectThat(actual).isEqualTo(expected)
     }
@@ -149,8 +149,8 @@ class BiDiJsonTest {
         println(jsonToothpaste)
         println(jsonOffer)
 
-        val actualToothpaste = fromJsonString(jsonToothpaste, JProduct).shouldSucceed()
-        val actualOffer = fromJsonString(jsonOffer, JProduct).shouldSucceed()
+        val actualToothpaste = fromJsonString(jsonToothpaste, JProduct).expectSuccess()
+        val actualOffer = fromJsonString(jsonOffer, JProduct).expectSuccess()
 
         expectThat(actualToothpaste).isEqualTo(toothpaste)
         expectThat(actualOffer).isEqualTo(offer)
@@ -164,7 +164,7 @@ class BiDiJsonTest {
 
         val json = toJsonString(invoice, JInvoice)
 
-        val actual = fromJsonString(json, JInvoice).shouldSucceed()
+        val actual = fromJsonString(json, JInvoice).expectSuccess()
 
         expectThat(actual).isEqualTo(invoice)
     }
@@ -174,7 +174,7 @@ class BiDiJsonTest {
         val illegalJson =
             "{\"id\":1001,\"vat-to-pay\":true,\"customer\":{\"id\":1,\"name\":\"ann\"},\"items\":[{\"id\":1001,\"desc\":\"toothpaste \\\"whiter than white\\\"\",\"price:12.34},{\"id\":10001,\"desc\":\"special offer\"}],\"total\":123.45}"
 
-        val error = fromJsonString(illegalJson, JInvoice).shouldFail()
+        val error = fromJsonString(illegalJson, JInvoice).expectFailure()
 
         expectThat(error.msg).isEqualTo("error at parsing reason: Unexpected character at position 140: 'i' (ASCII: 105)'")
     }
@@ -205,7 +205,7 @@ class BiDiJsonTest {
   "total": 123.45
 }  """.trimIndent()
 
-        val error = fromJsonString(jsonWithDifferentField, JInvoice).shouldFail()
+        val error = fromJsonString(jsonWithDifferentField, JInvoice).expectFailure()
 
         expectThat(error.msg).isEqualTo("error at </items/1> reason: Not found long_description")
     }
@@ -237,7 +237,7 @@ class BiDiJsonTest {
   "total": 123.45
 }  """.trimIndent()
 
-        val error = fromJsonString(jsonWithDifferentField, JInvoice).shouldFail()
+        val error = fromJsonString(jsonWithDifferentField, JInvoice).expectFailure()
 
         expectThat(error.msg).isEqualTo("error at </items/0/price> reason: Expected Double but found JsonNodeString(text=125, path=[items, 0, price])")
     }

@@ -1,21 +1,27 @@
 package com.ubertob.funky.json
 
+import com.ubertob.funky.outcome.Outcome
+import com.ubertob.funky.outcome.Outcome.Companion.tryThis
 
-fun <JN : JsonNode> parseJsonNodeArray(jsonString: String): JsonNodeArray<JN> = TODO()
+fun <T> tryParse(f: () -> T): Outcome<JsonError, T> = tryThis(f).transformFailure { JsonError(null, it.msg) }
 
-fun parseJsonNodeBoolean(jsonString: String): JsonNodeBoolean = TODO()
 
-fun parseJsonNodeDouble(jsonString: String): JsonNodeDouble = TODO()
+fun <JN : JsonNode> parseJsonNodeArray(tokens: Sequence<String>): Outcome<JsonError, JsonNodeArray<JN>> = TODO()
 
-fun parseJsonNodeInt(jsonString: String): JsonNodeInt = JsonNodeInt(jsonString.toInt())//put outcome around
+fun parseJsonNodeBoolean(tokens: Sequence<String>): Outcome<JsonError, JsonNodeBoolean> = TODO()
 
-fun parseJsonNodeLong(jsonString: String): JsonNodeLong = TODO()
+fun parseJsonNodeDouble(tokens: Sequence<String>): Outcome<JsonError, JsonNodeDouble> = TODO()
 
-fun parseJsonNodeNull(jsonString: String): JsonNodeNull = TODO()
+fun parseJsonNodeInt(tokens: Sequence<String>): Outcome<JsonError, JsonNodeInt> =
+    tryParse { JsonNodeInt(tokens.first().toInt()) }
 
-fun parseJsonNodeString(jsonString: String): JsonNodeString = TODO()
+fun parseJsonNodeLong(tokens: Sequence<String>): Outcome<JsonError, JsonNodeLong> = TODO()
 
-fun parseJsonNodeObject(jsonString: String): JsonNodeObject = TODO()
+fun parseJsonNodeNull(tokens: Sequence<String>): Outcome<JsonError, JsonNodeNull> = TODO()
+
+fun parseJsonNodeString(tokens: Sequence<String>): Outcome<JsonError, JsonNodeString> = TODO()
+
+fun parseJsonNodeObject(tokens: Sequence<String>): Outcome<JsonError, JsonNodeObject> = TODO()
 
 
 fun JsonNode.render(): String =
