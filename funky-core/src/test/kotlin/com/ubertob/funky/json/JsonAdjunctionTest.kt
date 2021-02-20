@@ -15,9 +15,9 @@ class JsonFTest {
     fun `JsonNode String`() {
 
         val expected = "abc"
-        val json = JString.build(expected)
+        val json = JString.toJson(expected)
 
-        val actual = JString.extract(json).shouldSucceed()
+        val actual = JString.fromJson(json).shouldSucceed()
 
         expectThat(actual).isEqualTo(expected)
     }
@@ -27,9 +27,9 @@ class JsonFTest {
     fun `Json Double`() {
 
         val expected = 123.0
-        val json = JDouble.build(expected)
+        val json = JDouble.toJson(expected)
 
-        val actual = JDouble.extract(json).shouldSucceed()
+        val actual = JDouble.fromJson(json).shouldSucceed()
 
         expectThat(actual).isEqualTo(expected)
     }
@@ -38,9 +38,9 @@ class JsonFTest {
     fun `Json Int`() {
 
         val expected = 124
-        val json = JInt.build(expected)
+        val json = JInt.toJson(expected)
 
-        val actual = JInt.extract(json).shouldSucceed()
+        val actual = JInt.fromJson(json).shouldSucceed()
 
         expectThat(actual).isEqualTo(expected)
     }
