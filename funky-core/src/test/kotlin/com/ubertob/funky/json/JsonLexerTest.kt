@@ -54,4 +54,19 @@ class JsonLexerTest {
             )
         )
     }
+
+    @Test
+    fun `json strings with escapes`() {
+        val json = """
+            {"abc":"abc\"\\ \n}"}
+        """.trimIndent()
+        val seq = lexer.tokenize(json)
+
+        println(json)
+        expectThat(seq.toList()).isEqualTo(
+            listOf(
+                "{", "\"", "abc", "\"", ":", "\"", "abc\"\\ \n}", "\"", "}"
+            )
+        )
+    }
 }
