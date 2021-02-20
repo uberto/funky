@@ -178,5 +178,15 @@ class JsonParserTest {
 
     }
 
+    @Test
+    fun `parse array`() {
+
+        val jsonString = JsonNodeNull().render()
+
+        val tokens = jsonLexer.tokenize(jsonString)
+
+        parseJsonNodeNull(tokens).expectSuccess()
+
+    }
     //todo array and object
 }
