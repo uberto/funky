@@ -118,8 +118,6 @@ class BiDiJsonTest {
         val customer = Customer(123, "abc")
         val jsonNodeObject = JCustomer.toJsonNode(customer)
 
-        println(jsonNodeObject)
-
         val actual = JCustomer.fromJsonNode(jsonNodeObject).expectSuccess()
 
         expectThat(actual).isEqualTo(customer)
@@ -130,8 +128,6 @@ class BiDiJsonTest {
 
         val expected = Customer(123, "abc")
         val json = toJsonString(expected, JCustomer)
-
-        println(json)
 
         val actual = fromJsonString(json, JCustomer).expectSuccess()
 
@@ -146,8 +142,8 @@ class BiDiJsonTest {
         val jsonToothpaste = toJsonString(toothpaste, JProduct)
         val jsonOffer = toJsonString(offer, JProduct)
 
-        println(jsonToothpaste)
-        println(jsonOffer)
+//        println(jsonToothpaste)
+//        println(jsonOffer)
 
         val actualToothpaste = fromJsonString(jsonToothpaste, JProduct).expectSuccess()
         val actualOffer = fromJsonString(jsonOffer, JProduct).expectSuccess()

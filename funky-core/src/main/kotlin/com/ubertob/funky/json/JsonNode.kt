@@ -63,15 +63,15 @@ sealed class JsonNode {
 
 }
 
-data class JsonNodeArray<JN : JsonNode>(val values: List<JN>, override val path: List<String> = emptyList()) :
-    JsonNode()
-
 data class JsonNodeBoolean(val value: Boolean, override val path: List<String> = emptyList()) : JsonNode()
 data class JsonNodeDouble(val num: Double, override val path: List<String> = emptyList()) : JsonNode()
 data class JsonNodeInt(val num: Int, override val path: List<String> = emptyList()) : JsonNode()
 data class JsonNodeLong(val num: Long, override val path: List<String> = emptyList()) : JsonNode()
 data class JsonNodeNull(override val path: List<String> = emptyList()) : JsonNode()
 data class JsonNodeString(val text: String, override val path: List<String> = emptyList()) : JsonNode()
+data class JsonNodeArray<JN : JsonNode>(val values: List<JN>, override val path: List<String> = emptyList()) :
+    JsonNode()
+
 data class JsonNodeObject(val fieldMap: Map<String, JsonNode>, override val path: List<String> = emptyList()) :
     JsonNode() {
 
