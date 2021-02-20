@@ -7,11 +7,9 @@ import java.util.concurrent.atomic.AtomicReference
 import kotlin.properties.ReadOnlyProperty
 import kotlin.reflect.KProperty
 
-
 interface StringWrapper {
     val raw: String
 }
-
 
 data class JsonError(val node: JsonNode?, val reason: String) : OutcomeError {
     val location = node?.path?.joinToString(separator = "/", prefix = "</", postfix = ">") ?: "parsing"
@@ -19,7 +17,6 @@ data class JsonError(val node: JsonNode?, val reason: String) : OutcomeError {
 }
 
 typealias JsonOutcome<T> = Outcome<JsonError, T>
-
 
 interface BiDiJson<T, JN : JsonNode> {
     fun fromJsonNode(node: JN): JsonOutcome<T>
@@ -161,14 +158,15 @@ data class JsonParsingException(val error: JsonError) : RuntimeException()
 data class JsonPropMandatory<T : Any, JN : JsonNode>(override val propName: String, val jf: BiDiJson<T, JN>) :
     JsonProperty<T>() {
 
-    override fun getter(node: JsonNodeObject): Outcome<JsonError, T> =
-        node.fieldMap[propName]
+    @Suppress("UNCHECKED_CAST")
+    override fun getter(wrapped: JsonNodeObject): Outcome<JsonError, T> =
+        wrapped.fieldMap[propName]
             ?.let { idn ->
                 tryThis { jf.fromJsonNode(idn as JN) }
                     .bind { it } //todo add join
                     .transformFailure { JsonError(idn, it.msg) }
             }
-            ?: JsonError(node, "Not found $propName").asFailure()
+            ?: JsonError(wrapped, "Not found $propName").asFailure()
 
     override fun setter(value: T): (JsonNodeObject) -> JsonNodeObject =
         { wrapped ->
@@ -180,8 +178,9 @@ data class JsonPropMandatory<T : Any, JN : JsonNode>(override val propName: Stri
 data class JsonPropOptional<T : Any, JN : JsonNode>(override val propName: String, val jf: BiDiJson<T, JN>) :
     JsonProperty<T?>() {
 
-    override fun getter(node: JsonNodeObject): Outcome<JsonError, T?> =
-        node.fieldMap[propName]
+    @Suppress("UNCHECKED_CAST")
+    override fun getter(wrapped: JsonNodeObject): Outcome<JsonError, T?> =
+        wrapped.fieldMap[propName]
             ?.let { idn ->
                 tryThis { jf.fromJsonNode(idn as JN) }
                     .bind { it }//todo add join
