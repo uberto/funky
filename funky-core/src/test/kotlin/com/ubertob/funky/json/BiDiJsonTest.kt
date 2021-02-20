@@ -11,9 +11,9 @@ class BiDiJsonTest {
     fun `JsonNode String`() {
 
         val expected = "abc"
-        val json = JString.toJson(expected)
+        val json = JString.toJsonNode(expected)
 
-        val actual = JString.fromJson(json).shouldSucceed()
+        val actual = JString.fromJsonNode(json).shouldSucceed()
 
         expectThat(actual).isEqualTo(expected)
     }
@@ -23,9 +23,9 @@ class BiDiJsonTest {
     fun `Json Double`() {
 
         val expected = 123.0
-        val json = JDouble.toJson(expected)
+        val json = JDouble.toJsonNode(expected)
 
-        val actual = JDouble.fromJson(json).shouldSucceed()
+        val actual = JDouble.fromJsonNode(json).shouldSucceed()
 
         expectThat(actual).isEqualTo(expected)
     }
@@ -34,9 +34,9 @@ class BiDiJsonTest {
     fun `Json Int`() {
 
         val expected = 124
-        val json = JInt.toJson(expected)
+        val json = JInt.toJsonNode(expected)
 
-        val actual = JInt.fromJson(json).shouldSucceed()
+        val actual = JInt.fromJsonNode(json).shouldSucceed()
 
         expectThat(actual).isEqualTo(expected)
     }

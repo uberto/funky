@@ -10,9 +10,9 @@ class BiDiJsonTest {
     @Test
     fun `JsonNode String`() {
         val expected = "abc"
-        val json = JString.toJson(expected)
+        val json = JString.toJsonNode(expected)
 
-        val actual = JString.fromJson(json).shouldSucceed()
+        val actual = JString.fromJsonNode(json).shouldSucceed()
 
         expectThat(actual).isEqualTo(expected)
     }
@@ -22,9 +22,9 @@ class BiDiJsonTest {
     fun `Json Double`() {
 
         val expected = 123.0
-        val json = JDouble.toJson(expected)
+        val json = JDouble.toJsonNode(expected)
 
-        val actual = JDouble.fromJson(json).shouldSucceed()
+        val actual = JDouble.fromJsonNode(json).shouldSucceed()
 
         expectThat(actual).isEqualTo(expected)
     }
@@ -33,9 +33,9 @@ class BiDiJsonTest {
     fun `Json Int`() {
 
         val expected = 124
-        val json = JInt.toJson(expected)
+        val json = JInt.toJsonNode(expected)
 
-        val actual = JInt.fromJson(json).shouldSucceed()
+        val actual = JInt.fromJsonNode(json).shouldSucceed()
 
         expectThat(actual).isEqualTo(expected)
     }
@@ -44,9 +44,9 @@ class BiDiJsonTest {
     fun `Json Long`() {
 
         val expected = 124L
-        val json = JLong.toJson(expected)
+        val json = JLong.toJsonNode(expected)
 
-        val actual = JLong.fromJson(json).shouldSucceed()
+        val actual = JLong.fromJsonNode(json).shouldSucceed()
 
         expectThat(actual).isEqualTo(expected)
     }
@@ -55,9 +55,9 @@ class BiDiJsonTest {
     fun `Json Customer and back`() {
 
         val expected = Customer(123, "abc")
-        val json = JCustomer.toJson(expected)
+        val json = JCustomer.toJsonNode(expected)
 
-        val actual = JCustomer.fromJson(json).shouldSucceed()
+        val actual = JCustomer.fromJsonNode(json).shouldSucceed()
 
         expectThat(actual).isEqualTo(expected)
     }
@@ -74,9 +74,9 @@ class BiDiJsonTest {
             Customer(3, "Carol")
         )
 
-        val node = jsonUserArray.toJson(expected)
+        val node = jsonUserArray.toJsonNode(expected)
 
-        val actual = jsonUserArray.fromJson(node).shouldSucceed()
+        val actual = jsonUserArray.fromJsonNode(node).shouldSucceed()
 
         expectThat(actual).isEqualTo(expected)
     }
@@ -87,11 +87,11 @@ class BiDiJsonTest {
     @Test
     fun `Json with nullable and back`() {
 
-        val toothpasteJson = JProduct.toJson(toothpaste)
-        val offerJson = JProduct.toJson(offer)
+        val toothpasteJson = JProduct.toJsonNode(toothpaste)
+        val offerJson = JProduct.toJsonNode(offer)
 
-        val actualToothpaste = JProduct.fromJson(toothpasteJson).shouldSucceed()
-        val actualOffer = JProduct.fromJson(offerJson).shouldSucceed()
+        val actualToothpaste = JProduct.fromJsonNode(toothpasteJson).shouldSucceed()
+        val actualOffer = JProduct.fromJsonNode(offerJson).shouldSucceed()
 
         expect {
             that(actualToothpaste).isEqualTo(toothpaste)
@@ -104,9 +104,9 @@ class BiDiJsonTest {
     @Test
     fun `Json with objects inside and back`() {
 
-        val json = JInvoice.toJson(invoice)
+        val json = JInvoice.toJsonNode(invoice)
 
-        val actual = JInvoice.fromJson(json).shouldSucceed()
+        val actual = JInvoice.fromJsonNode(json).shouldSucceed()
 
         expectThat(actual).isEqualTo(invoice)
     }
@@ -116,11 +116,11 @@ class BiDiJsonTest {
     fun `Customer serialize and deserialize`() {
 
         val customer = Customer(123, "abc")
-        val jsonNodeObject = JCustomer.toJson(customer)
+        val jsonNodeObject = JCustomer.toJsonNode(customer)
 
         println(jsonNodeObject)
 
-        val actual = JCustomer.fromJson(jsonNodeObject).shouldSucceed()
+        val actual = JCustomer.fromJsonNode(jsonNodeObject).shouldSucceed()
 
         expectThat(actual).isEqualTo(customer)
     }
