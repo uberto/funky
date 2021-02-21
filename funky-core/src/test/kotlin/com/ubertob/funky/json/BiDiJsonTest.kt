@@ -1,56 +1,106 @@
 package com.ubertob.funky.json
 
 import com.ubertob.funky.expectSuccess
+import com.ubertob.funky.lowercase
+import com.ubertob.funky.randomString
+import com.ubertob.funky.text
 import org.junit.jupiter.api.Test
 import strikt.api.expect
 import strikt.api.expectThat
 import strikt.assertions.isEqualTo
+import kotlin.random.Random
 
 class BiDiJsonTest {
 
     @Test
     fun `JsonNode String`() {
-        val expected = "abc"
-        val json = JString.toJsonNode(expected)
+        repeat(10) {
+            val value = randomString(lowercase, 3, 3)
 
-        val actual = JString.fromJsonNode(json).expectSuccess()
+            val json = JString.toJsonNode(value)
 
-        expectThat(actual).isEqualTo(expected)
+            val actual = JString.fromJsonNode(json).expectSuccess()
+
+            expectThat(actual).isEqualTo(value)
+        }
     }
-
 
     @Test
     fun `Json Double`() {
+        repeat(10) {
 
-        val expected = 123.0
-        val json = JDouble.toJsonNode(expected)
+            val value = Random.nextDouble()
+            val json = JDouble.toJsonNode(value)
 
-        val actual = JDouble.fromJsonNode(json).expectSuccess()
+            val actual = JDouble.fromJsonNode(json).expectSuccess()
 
-        expectThat(actual).isEqualTo(expected)
+            expectThat(actual).isEqualTo(value)
+        }
     }
 
     @Test
     fun `Json Int`() {
 
-        val expected = 124
-        val json = JInt.toJsonNode(expected)
+        repeat(10) {
 
-        val actual = JInt.fromJsonNode(json).expectSuccess()
+            val value = Random.nextInt()
+            val json = JInt.toJsonNode(value)
 
-        expectThat(actual).isEqualTo(expected)
+            val actual = JInt.fromJsonNode(json).expectSuccess()
+
+            expectThat(actual).isEqualTo(value)
+        }
     }
 
     @Test
     fun `Json Long`() {
 
-        val expected = 124L
-        val json = JLong.toJsonNode(expected)
+        repeat(10) {
 
-        val actual = JLong.fromJsonNode(json).expectSuccess()
+            val value = Random.nextLong()
+            val json = JLong.toJsonNode(value)
+
+            val actual = JLong.fromJsonNode(json).expectSuccess()
+
+            expectThat(actual).isEqualTo(value)
+        }
+    }
+
+    @Test
+    fun `Json Boolean`() {
+
+        repeat(3) {
+
+            val value = Random.nextBoolean()
+            val json = JBoolean.toJsonNode(value)
+
+            val actual = JBoolean.fromJsonNode(json).expectSuccess()
+
+            expectThat(actual).isEqualTo(value)
+        }
+    }
+
+    @Test
+    fun `json array of Strings`() {
+
+        val jsonStringArray = JArray(JString)
+
+        val expected = listOf(
+            randomString(text, 1, 10),
+            randomString(text, 1, 10),
+            randomString(text, 1, 10),
+            randomString(text, 1, 10)
+        )
+
+        val node = jsonStringArray.toJsonNode(expected)
+
+        val actual = jsonStringArray.fromJsonNode(node).expectSuccess()
 
         expectThat(actual).isEqualTo(expected)
+
+        println(jsonStringArray.toJson(expected))
     }
+
 
     @Test
     fun `Json Customer and back`() {

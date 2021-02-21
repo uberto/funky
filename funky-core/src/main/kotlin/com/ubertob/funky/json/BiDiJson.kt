@@ -21,6 +21,7 @@ typealias JsonOutcome<T> = Outcome<JsonError, T>
 interface BiDiJson<T, JN : JsonNode> {
     fun fromJsonNode(node: JN): JsonOutcome<T>
     fun toJsonNode(value: T): JN
+    fun toJson(value: T): String = toJsonNode(value).render()
 }
 
 typealias NodeWriter<T> = (JsonNodeObject, T) -> JsonNodeObject
