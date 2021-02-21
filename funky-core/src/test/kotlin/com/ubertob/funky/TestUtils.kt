@@ -28,12 +28,18 @@ fun stringsGenerator(charSet: String, minLen: Int, maxLen: Int): Sequence<String
 
 fun randomString(charSet: String, minLen: Int, maxLen: Int) =
     StringBuilder().run {
-        val len = if (maxLen > minLen) Random.nextInt(maxLen - minLen) + minLen else minLen
+        val len = randomInBetween(maxLen, minLen)
         repeat(len) {
             append(charSet.random())
         }
         toString()
     }
 
+private fun randomInBetween(maxLen: Int, minLen: Int) =
+    if (maxLen > minLen) Random.nextInt(maxLen - minLen) + minLen else minLen
+
 fun randomText(len: Int) = randomString(text, len, len)
+
+fun <T> randomList(minLen: Int, maxLen: Int, f: () -> T): List<T> = (0..randomInBetween(maxLen, minLen)).map { f() }
+
 

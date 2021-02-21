@@ -1,9 +1,6 @@
 package com.ubertob.funky.json
 
-import com.ubertob.funky.expectSuccess
-import com.ubertob.funky.lowercase
-import com.ubertob.funky.randomString
-import com.ubertob.funky.text
+import com.ubertob.funky.*
 import org.junit.jupiter.api.Test
 import strikt.api.expect
 import strikt.api.expectThat
@@ -22,6 +19,10 @@ class BiDiJsonTest {
             val actual = JString.fromJsonNode(json).expectSuccess()
 
             expectThat(actual).isEqualTo(value)
+
+            val jsonStr = JString.toJson(value)
+
+            expectThat(JString.fromJson(jsonStr).expectSuccess()).isEqualTo(value)
         }
     }
 
@@ -35,6 +36,10 @@ class BiDiJsonTest {
             val actual = JDouble.fromJsonNode(json).expectSuccess()
 
             expectThat(actual).isEqualTo(value)
+
+            val jsonStr = JDouble.toJson(value)
+
+            expectThat(JDouble.fromJson(jsonStr).expectSuccess()).isEqualTo(value)
         }
     }
 
@@ -49,6 +54,10 @@ class BiDiJsonTest {
             val actual = JInt.fromJsonNode(json).expectSuccess()
 
             expectThat(actual).isEqualTo(value)
+
+            val jsonStr = JInt.toJson(value)
+
+            expectThat(JInt.fromJson(jsonStr).expectSuccess()).isEqualTo(value)
         }
     }
 
@@ -63,6 +72,10 @@ class BiDiJsonTest {
             val actual = JLong.fromJsonNode(json).expectSuccess()
 
             expectThat(actual).isEqualTo(value)
+
+            val jsonStr = JLong.toJson(value)
+
+            expectThat(JLong.fromJson(jsonStr).expectSuccess()).isEqualTo(value)
         }
     }
 
@@ -77,28 +90,31 @@ class BiDiJsonTest {
             val actual = JBoolean.fromJsonNode(json).expectSuccess()
 
             expectThat(actual).isEqualTo(value)
+
+            val jsonStr = JBoolean.toJson(value)
+
+            expectThat(JBoolean.fromJson(jsonStr).expectSuccess()).isEqualTo(value)
         }
     }
 
     @Test
     fun `json array of Strings`() {
 
-        val jsonStringArray = JArray(JString)
+        repeat(10) {
+            val jsonStringArray = JArray(JString)
 
-        val expected = listOf(
-            randomString(text, 1, 10),
-            randomString(text, 1, 10),
-            randomString(text, 1, 10),
-            randomString(text, 1, 10)
-        )
+            val value = randomList(0, 5) { randomString(text, 1, 10) }
 
-        val node = jsonStringArray.toJsonNode(expected)
+            val node = jsonStringArray.toJsonNode(value)
 
-        val actual = jsonStringArray.fromJsonNode(node).expectSuccess()
+            val actual = jsonStringArray.fromJsonNode(node).expectSuccess()
 
-        expectThat(actual).isEqualTo(expected)
+            expectThat(actual).isEqualTo(value)
 
-        println(jsonStringArray.toJson(expected))
+            val jsonStr = jsonStringArray.toJson(value)
+
+            expectThat(jsonStringArray.fromJson(jsonStr).expectSuccess()).isEqualTo(value)
+        }
     }
 
 
