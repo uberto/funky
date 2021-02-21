@@ -44,8 +44,8 @@ fun parseJsonNodeString(tokens: TokensStream): Outcome<JsonError, JsonNodeString
 
 fun <JN : JsonNode> parseJsonNodeArray(
     tokens: TokensStream,
-    tokenParser: (TokensStream) -> JN
-): Outcome<JsonError, JsonNodeArray<JN>> =
+    tokenParser: (TokensStream) -> JsonOutcome<JN>
+): JsonOutcome<JsonNodeArray<JN>> =
     tryParse {
         val openBraket = tokens.next()
 
@@ -54,7 +54,7 @@ fun <JN : JsonNode> parseJsonNodeArray(
             var curr = tokens.peek()
             val nodes = mutableListOf<JN>()
             while (curr != "]") {
-                nodes.add(tokenParser(tokens))
+                nodes.add(tokenParser(tokens).orThrow())
                 curr = tokens.peek()
                 if (curr != "," && curr != "]") error("Expected comma or close bracket! $curr")
                 tokens.next()
