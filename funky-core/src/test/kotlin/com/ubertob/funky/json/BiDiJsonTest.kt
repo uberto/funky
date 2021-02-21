@@ -359,13 +359,11 @@ object JInvoice : JAny<Invoice>() {
 //todo
 // recheck for all unchecked cast
 // improve failure error msg (failing test)
-// check with Unicode chars
 // add prettyPrint/compactPrint options
+// add null/skipField option
 // add parseJson from Reader
 // add common JBidi (JInstant, JSealed etc.)
 // add passing node path in serialization as well (for errors)
-// add pre-check for multiple failures in parsing
-// add test for multiple reuse
 // add tests for concurrency reuse
 // add more tests for different kind of failures
 // measure performance against other libs
