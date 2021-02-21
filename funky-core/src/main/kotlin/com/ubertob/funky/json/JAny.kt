@@ -13,6 +13,7 @@ abstract class JAny<T : Any> : BiDiJson<T, JsonNodeObject> {
 
     private val nodeWriters: AtomicReference<Set<NodeWriter<T>>> = AtomicReference(emptySet())
     private val nodeReaders: AtomicReference<Set<NodeReader<*>>> = AtomicReference(emptySet())
+    private val fieldParsers: AtomicReference<Map<String, TokenStreamParser<JsonNode>>> = AtomicReference(emptyMap())
 
     internal fun registerSetter(nodeWriter: NodeWriter<T>) {
         nodeWriters.getAndUpdate { set -> set + nodeWriter }
@@ -22,12 +23,16 @@ abstract class JAny<T : Any> : BiDiJson<T, JsonNodeObject> {
         nodeReaders.getAndUpdate { set -> set + nodeReader }
     }
 
+    internal fun registerParser(fieldName: String, parser: TokenStreamParser<JsonNode>) {
+        fieldParsers.getAndUpdate { map -> map + (fieldName to parser) }
+    }
+
     override fun fromJsonNode(node: JsonNodeObject): Outcome<JsonError, T> = node.asObject(::deserialize)
 
     override fun toJsonNode(value: T): JsonNodeObject = serialize(value)
 
     override fun parseToNode(tokensStream: TokensStream): Outcome<JsonError, JsonNodeObject> =
-        parseJsonNodeObject(tokensStream, emptyMap()) //nodeReaders
+        parseJsonNodeObject(tokensStream, fieldParsers.get()) //nodeReaders
 
     fun serialize(value: T): JsonNodeObject = nodeWriters.get()
         .map { nw -> { jno: JsonNodeObject -> nw(jno, value) } }.fold(JsonNodeObject(emptyMap())) { acc, setter ->
@@ -75,10 +80,12 @@ abstract class JAny<T : Any> : BiDiJson<T, JsonNodeObject> {
 }
 
 
+
 sealed class JsonProperty<T> {
     abstract val propName: String
     abstract fun setter(value: T): (JsonNodeObject) -> JsonNodeObject
     abstract fun getter(wrapped: JsonNodeObject): JsonOutcome<T>
+    abstract fun parser(tokensStream: TokensStream): JsonOutcome<JsonNode>
 }
 
 data class JsonParsingException(val error: JsonError) : RuntimeException()
@@ -101,6 +108,10 @@ data class JsonPropMandatory<T : Any, JN : JsonNode>(override val propName: Stri
         { wrapped ->
             wrapped.copy(fieldMap = wrapped.fieldMap + (propName to jf.toJsonNode(value)))
         }
+
+    override fun parser(tokensStream: TokensStream): JsonOutcome<JsonNode> =
+        jf.parseToNode(tokensStream)
+
 }
 
 
@@ -124,6 +135,14 @@ data class JsonPropOptional<T : Any, JN : JsonNode>(override val propName: Strin
             } ?: wrapped
         }
 
+    override fun parser(tokensStream: TokensStream): JsonOutcome<JsonNode> =
+        tokensStream.run {
+            if (peek() == "null") parseJsonNodeNull(tokensStream)
+            else
+                jf.parseToNode(tokensStream)
+        }
+
+
 }
 
 sealed class JFieldBase<T, PT : Any>
@@ -136,8 +155,8 @@ sealed class JFieldBase<T, PT : Any>
     operator fun provideDelegate(thisRef: JAny<PT>, prop: KProperty<*>): JFieldBase<T, PT> {
         val jp = buildJsonProperty(prop)
         thisRef.registerSetter { jno, obj -> jp.setter(binder(obj))(jno) }
-        thisRef.registerGetter { jno -> jp.getter(jno) }
-
+        thisRef.registerGetter(jp::getter)
+        thisRef.registerParser(prop.name, jp::parser)
         return this
     }
 

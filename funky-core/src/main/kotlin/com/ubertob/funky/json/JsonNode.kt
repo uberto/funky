@@ -1,9 +1,6 @@
 package com.ubertob.funky.json
 
-import com.ubertob.funky.outcome.Outcome
-import com.ubertob.funky.outcome.asFailure
-import com.ubertob.funky.outcome.asSuccess
-import com.ubertob.funky.outcome.onFailure
+import com.ubertob.funky.outcome.*
 
 sealed class JsonNode {
 
@@ -48,9 +45,10 @@ sealed class JsonNode {
             else -> JsonError(this, "Expected Object but found $this").asFailure()
         }
 
-    fun <JN : JsonNode> asArray(): Outcome<JsonError, List<JN>> =
+    @Suppress("UNCHECKED_CAST")
+    fun <T, JN : JsonNode> asArray(f: (JN) -> Outcome<JsonError, T>): Outcome<JsonError, List<T>> =
         when (this) {
-            is JsonNodeArray<*> -> (values as List<JN>).asSuccess()
+            is JsonNodeArray<*> -> values.map { f(it as JN) }.extract()
             else -> JsonError(this, "Expected Array but found $this").asFailure()
         }
 

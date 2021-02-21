@@ -269,6 +269,7 @@ class BiDiJsonTest {
 // parsing objects
 // removing klaxon
 // add position + after on parsing errors
+// recheck for all unchecked cast
 // improve failure error msg (failing test)
 // check with Unicode chars
 // add prettyPrint/compactPrint options

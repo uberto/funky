@@ -1,8 +1,6 @@
 package com.ubertob.funky.json
 
 import com.ubertob.funky.outcome.Outcome
-import com.ubertob.funky.outcome.bind
-import com.ubertob.funky.outcome.sequence
 
 
 object JBoolean : BiDiJson<Boolean, JsonNodeBoolean> {
@@ -69,7 +67,7 @@ data class JArray<T : Any, JN : JsonNode>(val helper: BiDiJson<T, JN>) : BiDiJso
         node: JsonNodeArray<JN>,
         f: (JN) -> Outcome<JsonError, T>
     ): Outcome<JsonError, List<T>> =
-        node.asArray<JN>().bind { nodes -> nodes.map { n: JN -> f(n) }.sequence() }
+        node.asArray(f)
 
     override fun parseToNode(tokensStream: TokensStream): JsonOutcome<JsonNodeArray<JN>> =
         parseJsonNodeArray(tokensStream, helper::parseToNode)
