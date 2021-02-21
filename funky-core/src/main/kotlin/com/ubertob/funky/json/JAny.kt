@@ -156,7 +156,7 @@ sealed class JFieldBase<T, PT : Any>
         val jp = buildJsonProperty(prop)
         thisRef.registerSetter { jno, obj -> jp.setter(binder(obj))(jno) }
         thisRef.registerGetter(jp::getter)
-        thisRef.registerParser(prop.name, jp::parser)
+        thisRef.registerParser(jp.propName, jp::parser)
         return this
     }
 

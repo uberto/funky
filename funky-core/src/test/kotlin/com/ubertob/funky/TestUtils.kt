@@ -42,4 +42,6 @@ fun randomText(len: Int) = randomString(text, len, len)
 
 fun <T> randomList(minLen: Int, maxLen: Int, f: () -> T): List<T> = (0..randomInBetween(maxLen, minLen)).map { f() }
 
+fun <T> randomNullable(f: () -> T): T? = if (Random.nextBoolean()) f() else null
 
+fun randomPrice(min: Int, max: Int) = Random.nextInt(min * 100, max * 100) / 100.0

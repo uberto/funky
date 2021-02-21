@@ -1,5 +1,4 @@
 rootProject.name = 'funky'
 include 'funky-core'
-include 'funky-json'
 include 'funky-examples'
 
