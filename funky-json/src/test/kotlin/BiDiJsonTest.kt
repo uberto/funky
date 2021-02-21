@@ -191,13 +191,3 @@ object JInvoice : JAny<Invoice>() {
 
 }
 
-
-//todo
-// random tests
-// parsing arrays, and single values
-// removing klaxon
-// add passing node path in serialization as well
-// add pre-check for multiple failures in parsing
-// add test for multiple reuse
-// add tests for concurrency reuse
-// add test for different kind of failures

@@ -121,12 +121,18 @@ class BiDiJsonTest {
     @Test
     fun `Json Customer and back`() {
 
-        val expected = Customer(123, "abc")
-        val json = JCustomer.toJsonNode(expected)
+        repeat(10) {
+            val value = Customer(Random.nextInt(), randomString(text, 1, 10))
+            val json = JCustomer.toJsonNode(value)
 
-        val actual = JCustomer.fromJsonNode(json).expectSuccess()
+            val actual = JCustomer.fromJsonNode(json).expectSuccess()
 
-        expectThat(actual).isEqualTo(expected)
+            expectThat(actual).isEqualTo(value)
+
+            val jsonStr = JCustomer.toJson(value)
+
+            expectThat(JCustomer.fromJson(jsonStr).expectSuccess()).isEqualTo(value)
+        }
     }
 
 
@@ -135,17 +141,17 @@ class BiDiJsonTest {
 
         val jsonUserArray = JArray(JCustomer)
 
-        val expected = listOf(
+        val value = listOf(
             Customer(1, "Adam"),
             Customer(2, "Bob"),
             Customer(3, "Carol")
         )
 
-        val node = jsonUserArray.toJsonNode(expected)
+        val node = jsonUserArray.toJsonNode(value)
 
         val actual = jsonUserArray.fromJsonNode(node).expectSuccess()
 
-        expectThat(actual).isEqualTo(expected)
+        expectThat(actual).isEqualTo(value)
     }
 
 
@@ -257,3 +263,21 @@ class BiDiJsonTest {
     }
 
 }
+
+
+//todo
+// parsing objects
+// removing klaxon
+// add position + after on parsing errors
+// improve failure error msg (failing test)
+// check with Unicode chars
+// add prettyPrint/compactPrint options
+// add parseJson from Reader
+// add common JBidi (JInstant, JSealed etc.)
+// add passing node path in serialization as well (for errors)
+// add pre-check for multiple failures in parsing
+// add test for multiple reuse
+// add tests for concurrency reuse
+// add more tests for different kind of failures
+// measure performance against other libs
+// add un-typed option JObject<Any>

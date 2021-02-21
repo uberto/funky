@@ -179,6 +179,13 @@ class JsonParserTest {
     }
 
     @Test
+    fun `render array`() {
+        val jsonString = JsonNodeArray(listOf(JsonNodeString("abc"), JsonNodeString("def"))).render()
+
+        expectThat(jsonString).isEqualTo("""["abc", "def"]""")
+    }
+
+    @Test
     fun `parse array`() {
 
         val jsonString = """
@@ -191,5 +198,33 @@ class JsonParserTest {
 
         expectThat(nodes.render()).isEqualTo("""["abc", "def"]""")
     }
-    //todo object
+
+    @Test
+    fun `render object`() {
+        val jsonString = JsonNodeObject(mapOf("id" to JsonNodeInt(123), "name" to JsonNodeString("Ann"))).render()
+
+        val expected = """{"id": 123, "name": "Ann"}"""
+        expectThat(jsonString).isEqualTo(expected)
+    }
+
+    @Test
+    fun `parse an object`() {
+
+        val jsonString = """
+          {
+            "id": 123,
+            "name": "Ann"
+          }
+        """
+
+        val tokens = jsonLexer.tokenize(jsonString)
+
+        val nodes = parseJsonNodeObject(
+            tokens,
+            mapOf("id" to ::parseJsonNodeInt, "name" to ::parseJsonNodeString)
+        ).expectSuccess()
+
+        val expected = """{"id": 123, "name": "Ann"}"""
+        expectThat(nodes.render()).isEqualTo(expected)
+    }
 }

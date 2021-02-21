@@ -27,7 +27,7 @@ abstract class JAny<T : Any> : BiDiJson<T, JsonNodeObject> {
     override fun toJsonNode(value: T): JsonNodeObject = serialize(value)
 
     override fun parseToNode(tokensStream: TokensStream): Outcome<JsonError, JsonNodeObject> =
-        parseJsonNodeObject(tokensStream)
+        parseJsonNodeObject(tokensStream, emptyMap()) //nodeReaders
 
     fun serialize(value: T): JsonNodeObject = nodeWriters.get()
         .map { nw -> { jno: JsonNodeObject -> nw(jno, value) } }.fold(JsonNodeObject(emptyMap())) { acc, setter ->
