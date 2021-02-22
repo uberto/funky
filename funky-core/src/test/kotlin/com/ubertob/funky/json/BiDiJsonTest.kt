@@ -196,6 +196,14 @@ class BiDiJsonTest {
         }
     }
 
+    @Test
+    fun `parsing illegal Int gives us precise errors`() {
+        val illegalJson = "123b"
+
+        val error = JInt.fromJson(illegalJson).expectFailure()
+
+        expectThat(error.msg).isEqualTo("error at parsing: Expected an Int at position 1 but found '123b'")
+    }
 
     @Test
     fun `parsing illegal json gives us precise errors`() {
@@ -204,7 +212,7 @@ class BiDiJsonTest {
 
         val error = JInvoice.fromJson(illegalJson).expectFailure()
 
-        expectThat(error.msg).isEqualTo("error at parsing reason: Unexpected character at position 140: 'i' (ASCII: 105)'")
+        expectThat(error.msg).isEqualTo("error at parsing: Expected '\"' at position 7 but found '1001'")
     }
 
     @Test
@@ -267,7 +275,7 @@ class BiDiJsonTest {
 
         val error = JInvoice.fromJson(jsonWithDifferentField).expectFailure()
 
-        expectThat(error.msg).isEqualTo("error at </items/0/price> reason: Expected Double but found JsonNodeString(text=125, path=[items, 0, price])")
+        expectThat(error.msg).isEqualTo("error at parsing: Expected a Double at position 55 but found '\"'")
     }
 }
 
@@ -357,14 +365,13 @@ object JInvoice : JAny<Invoice>() {
 
 
 //todo
+// fix node location for tests
+// add common JBidi (JInstant, JSealed etc.)
+// add passing node path in serialization as well (for errors)
 // recheck for all unchecked cast
-// improve failure error msg (failing test)
 // add prettyPrint/compactPrint options
 // add null/skipField option
 // add parseJson from Reader
-// add common JBidi (JInstant, JSealed etc.)
-// add passing node path in serialization as well (for errors)
 // add tests for concurrency reuse
-// add more tests for different kind of failures
 // measure performance against other libs
 // add un-typed option JObject<Any>

@@ -76,9 +76,7 @@ abstract class JAny<T : Any> : BiDiJson<T, JsonNodeObject> {
     private fun multipleErrors(jsonNode: JsonNodeObject, errors: List<OutcomeError>): JsonError =
         JsonError(jsonNode, errors.joinToString(prefix = "Multiple errors: "))
 
-
 }
-
 
 
 sealed class JsonProperty<T> {
@@ -98,9 +96,7 @@ data class JsonPropMandatory<T : Any, JN : JsonNode>(override val propName: Stri
     override fun getter(wrapped: JsonNodeObject): Outcome<JsonError, T> =
         wrapped.fieldMap[propName]
             ?.let { idn ->
-                Outcome.tryThis { jf.fromJsonNode(idn as JN) }
-                    .bind { it } //todo add join
-                    .transformFailure { JsonError(idn, it.msg) }
+                jf.fromJsonNode(idn as JN)
             }
             ?: JsonError(wrapped, "Not found $propName").asFailure()
 

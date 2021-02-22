@@ -12,7 +12,7 @@ interface StringWrapper {
 
 data class JsonError(val node: JsonNode?, val reason: String) : OutcomeError {
     val location = node?.path?.joinToString(separator = "/", prefix = "</", postfix = ">") ?: "parsing"
-    override val msg = "error at $location reason: $reason"
+    override val msg = "error at $location: $reason"
 }
 
 typealias JsonOutcome<T> = Outcome<JsonError, T>

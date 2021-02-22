@@ -21,12 +21,12 @@ sealed class Outcome<out E : OutcomeError, out T> {
             }
 
     companion object {
-        fun <T> tryThis(block: () -> T): Outcome<ThrowableError, T> =
-                try {
-                    block().asSuccess()
-                } catch (e: Throwable) {
-                    ThrowableError(e).asFailure()
-                }
+        inline fun <T> tryThis(block: () -> T): Outcome<ThrowableError, T> =
+            try {
+                block().asSuccess()
+            } catch (e: Throwable) {
+                ThrowableError(e).asFailure()
+            }
     }
 }
 
