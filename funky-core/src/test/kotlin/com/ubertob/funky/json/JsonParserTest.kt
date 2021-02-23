@@ -18,7 +18,7 @@ class JsonParserTest {
     fun `render Int`() {
         val value = 123
 
-        val jsonString = JsonNodeInt(value).render()
+        val jsonString = JsonNodeInt(value, NodeRoot).render()
 
         expectThat(jsonString).isEqualTo("123")
     }
@@ -29,11 +29,11 @@ class JsonParserTest {
 
             val value = Random.nextInt()
 
-            val jsonString = JsonNodeInt(value).render()
+            val jsonString = JsonNodeInt(value, NodeRoot).render()
 
             val tokens = jsonLexer.tokenize(jsonString)
 
-            val node = parseJsonNodeInt(tokens).expectSuccess()
+            val node = parseJsonNodeInt(tokens, NodeRoot).expectSuccess()
 
             expectThat(node.num).isEqualTo(value)
         }
@@ -43,7 +43,7 @@ class JsonParserTest {
     fun `render Long`() {
         val value = Long.MAX_VALUE
 
-        val jsonString = JsonNodeLong(value).render()
+        val jsonString = JsonNodeLong(value, NodeRoot).render()
 
         expectThat(jsonString).isEqualTo("9223372036854775807")
     }
@@ -54,11 +54,11 @@ class JsonParserTest {
 
             val value = Random.nextLong()
 
-            val jsonString = JsonNodeLong(value).render()
+            val jsonString = JsonNodeLong(value, NodeRoot).render()
 
             val tokens = jsonLexer.tokenize(jsonString)
 
-            val node = parseJsonNodeLong(tokens).expectSuccess()
+            val node = parseJsonNodeLong(tokens, NodeRoot).expectSuccess()
 
             expectThat(node.num).isEqualTo(value)
         }
@@ -68,7 +68,7 @@ class JsonParserTest {
     fun `render Boolean`() {
         val value = true
 
-        val jsonString = JsonNodeBoolean(value).render()
+        val jsonString = JsonNodeBoolean(value, NodeRoot).render()
 
         expectThat(jsonString).isEqualTo("true")
     }
@@ -80,11 +80,11 @@ class JsonParserTest {
 
             val value = Random.nextBoolean()
 
-            val jsonString = JsonNodeBoolean(value).render()
+            val jsonString = JsonNodeBoolean(value, NodeRoot).render()
 
             val tokens = jsonLexer.tokenize(jsonString)
 
-            val node = parseJsonNodeBoolean(tokens).expectSuccess()
+            val node = parseJsonNodeBoolean(tokens, NodeRoot).expectSuccess()
 
             expectThat(node.value).isEqualTo(value)
         }
@@ -94,7 +94,7 @@ class JsonParserTest {
     fun `render Double`() {
         val value = Double.MIN_VALUE
 
-        val jsonString = JsonNodeDouble(value).render()
+        val jsonString = JsonNodeDouble(value, NodeRoot).render()
 
         expectThat(jsonString).isEqualTo("4.9E-324")
     }
@@ -106,11 +106,11 @@ class JsonParserTest {
 
             val value = Random.nextDouble()
 
-            val jsonString = JsonNodeDouble(value).render()
+            val jsonString = JsonNodeDouble(value, NodeRoot).render()
 
             val tokens = jsonLexer.tokenize(jsonString)
 
-            val node = parseJsonNodeDouble(tokens).expectSuccess()
+            val node = parseJsonNodeDouble(tokens, NodeRoot).expectSuccess()
 
             expectThat(node.num).isEqualTo(value)
         }
@@ -121,7 +121,7 @@ class JsonParserTest {
     fun `render String`() {
         val value = """ abc {} \\ " \n 123"""
 
-        val jsonString = JsonNodeString(value).render()
+        val jsonString = JsonNodeString(value, NodeRoot).render()
 
         expectThat(jsonString).isEqualTo("""" abc {} \\ \" \n 123"""")
     }
@@ -132,11 +132,11 @@ class JsonParserTest {
         repeat(10) {
             val value = randomString(lowercase, 3, 3)
 
-            val jsonString = JsonNodeString(value).render()
+            val jsonString = JsonNodeString(value, NodeRoot).render()
 
             val tokens = jsonLexer.tokenize(jsonString)
 
-            val node = parseJsonNodeString(tokens).expectSuccess()
+            val node = parseJsonNodeString(tokens, NodeRoot).expectSuccess()
 
             expectThat(node.text).isEqualTo(value)
         }
@@ -148,13 +148,13 @@ class JsonParserTest {
         repeat(100) {
             val value = randomString(text, 1, 10)
 
-            val jsonString = JsonNodeString(value).render()
+            val jsonString = JsonNodeString(value, NodeRoot).render()
 
 //            println("$value -> $jsonString")
 
             val tokens = jsonLexer.tokenize(jsonString)
 
-            val node = parseJsonNodeString(tokens).expectSuccess()
+            val node = parseJsonNodeString(tokens, NodeRoot).expectSuccess()
 
             expectThat(node.text).isEqualTo(value)
         }
@@ -162,7 +162,7 @@ class JsonParserTest {
 
     @Test
     fun `render null`() {
-        val jsonString = JsonNodeNull().render()
+        val jsonString = JsonNodeNull(NodeRoot).render()
 
         expectThat(jsonString).isEqualTo("null")
     }
@@ -170,17 +170,18 @@ class JsonParserTest {
     @Test
     fun `parse Null`() {
 
-        val jsonString = JsonNodeNull().render()
+        val jsonString = JsonNodeNull(NodeRoot).render()
 
         val tokens = jsonLexer.tokenize(jsonString)
 
-        parseJsonNodeNull(tokens).expectSuccess()
+        parseJsonNodeNull(tokens, NodeRoot).expectSuccess()
 
     }
 
     @Test
     fun `render array`() {
-        val jsonString = JsonNodeArray(listOf(JsonNodeString("abc"), JsonNodeString("def"))).render()
+        val jsonString =
+            JsonNodeArray(listOf(JsonNodeString("abc", NodeRoot), JsonNodeString("def", NodeRoot)), NodeRoot).render()
 
         expectThat(jsonString).isEqualTo("""["abc", "def"]""")
     }
@@ -194,14 +195,17 @@ class JsonParserTest {
 
         val tokens = jsonLexer.tokenize(jsonString)
 
-        val nodes = parseJsonNodeArray(tokens, ::parseJsonNodeString).expectSuccess()
+        val nodes = parseJsonNodeArray(tokens, ::parseJsonNodeString, NodeRoot).expectSuccess()
 
         expectThat(nodes.render()).isEqualTo("""["abc", "def"]""")
     }
 
     @Test
     fun `render object`() {
-        val jsonString = JsonNodeObject(mapOf("id" to JsonNodeInt(123), "name" to JsonNodeString("Ann"))).render()
+        val jsonString = JsonNodeObject(
+            mapOf("id" to JsonNodeInt(123, NodeRoot), "name" to JsonNodeString("Ann", NodeRoot)),
+            NodeRoot
+        ).render()
 
         val expected = """{"id": 123, "name": "Ann"}"""
         expectThat(jsonString).isEqualTo(expected)
@@ -221,7 +225,8 @@ class JsonParserTest {
 
         val nodes = parseJsonNodeObject(
             tokens,
-            mapOf("id" to ::parseJsonNodeInt, "name" to ::parseJsonNodeString)
+            mapOf("id" to ::parseJsonNodeInt, "name" to ::parseJsonNodeString),
+            NodeRoot
         ).expectSuccess()
 
         val expected = """{"id": 123, "name": "Ann"}"""

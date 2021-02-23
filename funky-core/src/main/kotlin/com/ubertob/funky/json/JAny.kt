@@ -27,38 +27,37 @@ abstract class JAny<T : Any> : BiDiJson<T, JsonNodeObject> {
         fieldParsers.getAndUpdate { map -> map + (fieldName to parser) }
     }
 
-    override fun fromJsonNode(node: JsonNodeObject): Outcome<JsonError, T> = node.asObject(::deserialize)
-
-    override fun toJsonNode(value: T): JsonNodeObject = serialize(value)
-
-    override fun parseToNode(tokensStream: TokensStream): Outcome<JsonError, JsonNodeObject> =
-        parseJsonNodeObject(tokensStream, fieldParsers.get()) //nodeReaders
-
-    fun serialize(value: T): JsonNodeObject = nodeWriters.get()
-        .map { nw -> { jno: JsonNodeObject -> nw(jno, value) } }.fold(JsonNodeObject(emptyMap())) { acc, setter ->
-            setter(acc)
-        }
-
-    abstract fun JsonNodeObject.tryDeserialize(): T?
-
-    fun deserialize(from: JsonNodeObject): Outcome<JsonError, T> =
-        composeFailures(nodeReaders.get(), from)
+    override fun fromJsonNode(node: JsonNodeObject): Outcome<JsonError, T> =
+        composeFailures(nodeReaders.get(), node)
             .bind {
                 Outcome.tryThis {
-                    from.tryDeserialize() ?: throw JsonParsingException(
-                        JsonError(from, "tryDeserialize returned null!")
+                    node.tryDeserialize() ?: throw JsonParsingException(
+                        JsonError(node, "tryDeserialize returned null!")
                     )
                 }.transformFailure { throwableError ->
                     when (throwableError.t) {
                         is JsonParsingException -> throwableError.t.error // keep path info
-                        else -> JsonError(from, throwableError.msg)
+                        else -> JsonError(node, throwableError.msg)
                     }
                 }
             }
 
+    override fun toJsonNode(value: T, path: NodePath): JsonNodeObject =
+        nodeWriters.get()
+            .fold(JsonNodeObject(emptyMap(), path)) { acc, writer ->
+                writer(acc, value)
+            }
+
+    override fun parseToNode(tokensStream: TokensStream, path: NodePath): Outcome<JsonError, JsonNodeObject> =
+        parseJsonNodeObject(tokensStream, fieldParsers.get(), path)
+
+
+    abstract fun JsonNodeObject.tryDeserialize(): T?
+
+
     private fun composeFailures(nodeReaders: Set<NodeReader<*>>, jsonNode: JsonNodeObject): JsonOutcome<Unit> =
         nodeReaders
-            .fold(emptyList<JsonOutcome<*>>()) { acc, r -> acc + r(jsonNode) }
+            .fold(emptyList<JsonOutcome<*>>()) { acc, reader -> acc + reader(jsonNode) }
             .mapNotNull {
                 when (it) {
                     is Success -> null
@@ -83,7 +82,7 @@ sealed class JsonProperty<T> {
     abstract val propName: String
     abstract fun setter(value: T): (JsonNodeObject) -> JsonNodeObject
     abstract fun getter(wrapped: JsonNodeObject): JsonOutcome<T>
-    abstract fun parser(tokensStream: TokensStream): JsonOutcome<JsonNode>
+    abstract fun parser(tokensStream: TokensStream, path: NodePath): JsonOutcome<JsonNode>
 }
 
 data class JsonParsingException(val error: JsonError) : RuntimeException()
@@ -102,11 +101,11 @@ data class JsonPropMandatory<T : Any, JN : JsonNode>(override val propName: Stri
 
     override fun setter(value: T): (JsonNodeObject) -> JsonNodeObject =
         { wrapped ->
-            wrapped.copy(fieldMap = wrapped.fieldMap + (propName to jf.toJsonNode(value)))
+            wrapped.copy(fieldMap = wrapped.fieldMap + (propName to jf.toJsonNode(value, Node(propName, wrapped.path))))
         }
 
-    override fun parser(tokensStream: TokensStream): JsonOutcome<JsonNode> =
-        jf.parseToNode(tokensStream)
+    override fun parser(tokensStream: TokensStream, path: NodePath): JsonOutcome<JsonNode> =
+        jf.parseToNode(tokensStream, path)
 
 }
 
@@ -127,15 +126,20 @@ data class JsonPropOptional<T : Any, JN : JsonNode>(override val propName: Strin
     override fun setter(value: T?): (JsonNodeObject) -> JsonNodeObject =
         { wrapped ->
             value?.let {
-                wrapped.copy(fieldMap = wrapped.fieldMap + (propName to jf.toJsonNode(it)))
+                wrapped.copy(
+                    fieldMap = wrapped.fieldMap + (propName to jf.toJsonNode(
+                        it,
+                        Node(propName, wrapped.path)
+                    ))
+                )
             } ?: wrapped
         }
 
-    override fun parser(tokensStream: TokensStream): JsonOutcome<JsonNode> =
+    override fun parser(tokensStream: TokensStream, path: NodePath): JsonOutcome<JsonNode> =
         tokensStream.run {
-            if (peek() == "null") parseJsonNodeNull(tokensStream)
+            if (peek() == "null") parseJsonNodeNull(tokensStream, path)
             else
-                jf.parseToNode(tokensStream)
+                jf.parseToNode(tokensStream, path)
         }
 
 

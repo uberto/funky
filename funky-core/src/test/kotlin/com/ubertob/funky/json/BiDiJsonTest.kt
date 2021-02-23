@@ -14,7 +14,7 @@ class BiDiJsonTest {
         repeat(10) {
             val value = randomString(lowercase, 3, 3)
 
-            val json = JString.toJsonNode(value)
+            val json = JString.toJsonNode(value, NodeRoot)
 
             val actual = JString.fromJsonNode(json).expectSuccess()
 
@@ -31,7 +31,7 @@ class BiDiJsonTest {
         repeat(10) {
 
             val value = Random.nextDouble()
-            val json = JDouble.toJsonNode(value)
+            val json = JDouble.toJsonNode(value, NodeRoot)
 
             val actual = JDouble.fromJsonNode(json).expectSuccess()
 
@@ -49,7 +49,7 @@ class BiDiJsonTest {
         repeat(10) {
 
             val value = Random.nextInt()
-            val json = JInt.toJsonNode(value)
+            val json = JInt.toJsonNode(value, NodeRoot)
 
             val actual = JInt.fromJsonNode(json).expectSuccess()
 
@@ -67,7 +67,7 @@ class BiDiJsonTest {
         repeat(10) {
 
             val value = Random.nextLong()
-            val json = JLong.toJsonNode(value)
+            val json = JLong.toJsonNode(value, NodeRoot)
 
             val actual = JLong.fromJsonNode(json).expectSuccess()
 
@@ -85,7 +85,7 @@ class BiDiJsonTest {
         repeat(3) {
 
             val value = Random.nextBoolean()
-            val json = JBoolean.toJsonNode(value)
+            val json = JBoolean.toJsonNode(value, NodeRoot)
 
             val actual = JBoolean.fromJsonNode(json).expectSuccess()
 
@@ -105,7 +105,7 @@ class BiDiJsonTest {
 
             val value = randomList(0, 5) { randomString(text, 1, 10) }
 
-            val node = jsonStringArray.toJsonNode(value)
+            val node = jsonStringArray.toJsonNode(value, NodeRoot)
 
             val actual = jsonStringArray.fromJsonNode(node).expectSuccess()
 
@@ -123,7 +123,7 @@ class BiDiJsonTest {
 
         repeat(10) {
             val value = randomCustomer()
-            val json = JCustomer.toJsonNode(value)
+            val json = JCustomer.toJsonNode(value, NodeRoot)
 
             val actual = JCustomer.fromJsonNode(json).expectSuccess()
 
@@ -144,7 +144,7 @@ class BiDiJsonTest {
 
             val value = randomList(0, 10) { randomCustomer() }
 
-            val node = jsonUserArray.toJsonNode(value)
+            val node = jsonUserArray.toJsonNode(value, NodeRoot)
 
             val actual = jsonUserArray.fromJsonNode(node).expectSuccess()
 
@@ -160,8 +160,8 @@ class BiDiJsonTest {
     @Test
     fun `Json with nullable and back`() {
 
-        val toothpasteJson = JProduct.toJsonNode(toothpaste)
-        val offerJson = JProduct.toJsonNode(offer)
+        val toothpasteJson = JProduct.toJsonNode(toothpaste, NodeRoot)
+        val offerJson = JProduct.toJsonNode(offer, NodeRoot)
 
         val actualToothpaste = JProduct.fromJsonNode(toothpasteJson).expectSuccess()
         val actualOffer = JProduct.fromJsonNode(offerJson).expectSuccess()
@@ -184,7 +184,7 @@ class BiDiJsonTest {
 
         repeat(100) {
             val invoice = randomInvoice()
-            val json = JInvoice.toJsonNode(invoice)
+            val json = JInvoice.toJsonNode(invoice, NodeRoot)
 
             val actual = JInvoice.fromJsonNode(json).expectSuccess()
 
@@ -202,7 +202,7 @@ class BiDiJsonTest {
 
         val error = JInt.fromJson(illegalJson).expectFailure()
 
-        expectThat(error.msg).isEqualTo("error at parsing: Expected an Int at position 1 but found '123b'")
+        expectThat(error.msg).isEqualTo("error at parsing: Expected an Int at position 1 but found '123b' while parsing <[root]>")
     }
 
     @Test
@@ -212,7 +212,7 @@ class BiDiJsonTest {
 
         val error = JInvoice.fromJson(illegalJson).expectFailure()
 
-        expectThat(error.msg).isEqualTo("error at parsing: Expected '\"' at position 7 but found '1001'")
+        expectThat(error.msg).isEqualTo("error at parsing: Expected '\"' at position 7 but found '1001' while parsing <[root]/id>")
     }
 
     @Test
@@ -243,7 +243,7 @@ class BiDiJsonTest {
 
         val error = JInvoice.fromJson(jsonWithDifferentField).expectFailure()
 
-        expectThat(error.msg).isEqualTo("error at </items/1> reason: Not found long_description")
+        expectThat(error.msg).isEqualTo("error at <[root]/items/1>: Not found long_description")
     }
 
 
@@ -275,7 +275,7 @@ class BiDiJsonTest {
 
         val error = JInvoice.fromJson(jsonWithDifferentField).expectFailure()
 
-        expectThat(error.msg).isEqualTo("error at parsing: Expected a Double at position 55 but found '\"'")
+        expectThat(error.msg).isEqualTo("error at parsing: Expected a Double at position 55 but found '\"' while parsing <[root]/items/0/price>")
     }
 }
 
@@ -365,9 +365,7 @@ object JInvoice : JAny<Invoice>() {
 
 
 //todo
-// fix node location for tests
 // add common JBidi (JInstant, JSealed etc.)
-// add passing node path in serialization as well (for errors)
 // recheck for all unchecked cast
 // add prettyPrint/compactPrint options
 // add null/skipField option

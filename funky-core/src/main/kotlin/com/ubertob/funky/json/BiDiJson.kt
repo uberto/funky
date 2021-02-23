@@ -11,7 +11,7 @@ interface StringWrapper {
 }
 
 data class JsonError(val node: JsonNode?, val reason: String) : OutcomeError {
-    val location = node?.path?.joinToString(separator = "/", prefix = "</", postfix = ">") ?: "parsing"
+    val location = node?.path?.getPath()?.let { "<$it>" } ?: "parsing"
     override val msg = "error at $location: $reason"
 }
 
@@ -21,14 +21,13 @@ val defaultLexer = JsonLexer()
 
 interface BiDiJson<T, JN : JsonNode> {
     fun fromJsonNode(node: JN): JsonOutcome<T>
-    fun toJsonNode(value: T): JN
+    fun toJsonNode(value: T, path: NodePath): JN
 
-    fun parseToNode(tokensStream: TokensStream): JsonOutcome<JN>
+    fun parseToNode(tokensStream: TokensStream, path: NodePath): JsonOutcome<JN>
 
-    fun toJson(value: T): String = toJsonNode(value).render()
+    fun toJson(value: T): String = toJsonNode(value, NodeRoot).render()
     fun fromJson(jsonString: String, lexer: JsonLexer = defaultLexer): JsonOutcome<T> =
-        lexer.tokenize(jsonString)
-            .let(this::parseToNode)
+        parseToNode(lexer.tokenize(jsonString), NodeRoot)
             .bind { fromJsonNode(it) }
 }
 
