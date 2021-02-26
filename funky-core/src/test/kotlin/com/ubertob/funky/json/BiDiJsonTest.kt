@@ -263,7 +263,7 @@ class BiDiJsonTest {
       "id": 1001,
       "short_desc": "toothpaste",
       "long_description": "toothpaste \"whiter than white\"",
-      "price": "125"
+      "price": "a string"
     },
     {
       "id": 10001,
@@ -307,7 +307,7 @@ object JCustomer : JAny<Customer>() {
     val id by JField(Customer::id, JInt)
     val name by JField(Customer::name, JString)
 
-    override fun JsonNodeObject.tryDeserialize() =
+    override fun JsonNodeObject.deserialize() =
         Customer(
             id = +id,
             name = +name
@@ -324,7 +324,7 @@ object JProduct : JAny<Product>() {
     val short_desc by JField(Product::shortDesc, JString)
     val price by JFieldMaybe(Product::price, JDouble)
 
-    override fun JsonNodeObject.tryDeserialize() =
+    override fun JsonNodeObject.deserialize() =
         Product(
             id = +id,
             shortDesc = +short_desc,
@@ -352,7 +352,7 @@ object JInvoice : JAny<Invoice>() {
     val items by JField(Invoice::items, JArray(JProduct))
     val total by JField(Invoice::total, JDouble)
 
-    override fun JsonNodeObject.tryDeserialize(): Invoice =
+    override fun JsonNodeObject.deserialize(): Invoice =
         Invoice(
             id = +id,
             vat = +vat,
@@ -365,11 +365,14 @@ object JInvoice : JAny<Invoice>() {
 
 
 //todo
-// add common JBidi (JInstant, JSealed etc.)
+// add common JBidi (JInstant, JSealed JEnum etc.)
+// check with Java
 // recheck for all unchecked cast
 // add prettyPrint/compactPrint options
 // add null/skipField option
 // add parseJson from Reader
+// serialize with stringbuilder
 // add tests for concurrency reuse
 // measure performance against other libs
 // add un-typed option JObject<Any>
+// add constant fields

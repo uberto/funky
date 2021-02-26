@@ -1,13 +1,16 @@
 package com.ubertob.funky.json
 
-import com.ubertob.funky.outcome.*
+import com.ubertob.funky.outcome.Outcome
+import com.ubertob.funky.outcome.OutcomeError
+import com.ubertob.funky.outcome.asFailure
+import com.ubertob.funky.outcome.asSuccess
 import java.util.concurrent.atomic.AtomicReference
 import kotlin.properties.ReadOnlyProperty
 import kotlin.reflect.KProperty
 
 
 typealias NodeWriter<T> = (JsonNodeObject, T) -> JsonNodeObject
-typealias NodeReader<T> = (JsonNodeObject) -> JsonOutcome<T>
+typealias NodeReader<T> = (JsonNodeObject) -> T
 
 abstract class JAny<T : Any> : BiDiJson<T, JsonNodeObject> {
 
@@ -27,20 +30,13 @@ abstract class JAny<T : Any> : BiDiJson<T, JsonNodeObject> {
         fieldParsers.getAndUpdate { map -> map + (fieldName to parser) }
     }
 
-    override fun fromJsonNode(node: JsonNodeObject): Outcome<JsonError, T> =
-        composeFailures(nodeReaders.get(), node)
-            .bind {
-                Outcome.tryThis {
-                    node.tryDeserialize() ?: throw JsonParsingException(
-                        JsonError(node, "tryDeserialize returned null!")
-                    )
-                }.transformFailure { throwableError ->
-                    when (throwableError.t) {
-                        is JsonParsingException -> throwableError.t.error // keep path info
-                        else -> JsonError(node, throwableError.msg)
-                    }
-                }
-            }
+    override fun fromJsonNode(node: JsonNodeObject): JsonOutcome<T> =
+        tryFromNode(node) {
+            node.deserialize() ?: throw JsonParsingException(
+                JsonError(node, "tryDeserialize returned null!")
+            )
+        }
+
 
     override fun toJsonNode(value: T, path: NodePath): JsonNodeObject =
         nodeWriters.get()
@@ -52,25 +48,9 @@ abstract class JAny<T : Any> : BiDiJson<T, JsonNodeObject> {
         parseJsonNodeObject(tokensStream, fieldParsers.get(), path)
 
 
-    abstract fun JsonNodeObject.tryDeserialize(): T?
+    //it's safe to throw exceptions, they will be caught
+    abstract fun JsonNodeObject.deserialize(): T?
 
-
-    private fun composeFailures(nodeReaders: Set<NodeReader<*>>, jsonNode: JsonNodeObject): JsonOutcome<Unit> =
-        nodeReaders
-            .fold(emptyList<JsonOutcome<*>>()) { acc, reader -> acc + reader(jsonNode) }
-            .mapNotNull {
-                when (it) {
-                    is Success -> null
-                    is Failure -> it.error
-                }
-            }
-            .let { errors ->
-                when {
-                    errors.isEmpty() -> Unit.asSuccess()
-                    errors.size == 1 -> errors[0].asFailure()
-                    else -> multipleErrors(jsonNode, errors).asFailure()
-                }
-            }
 
     private fun multipleErrors(jsonNode: JsonNodeObject, errors: List<OutcomeError>): JsonError =
         JsonError(jsonNode, errors.joinToString(prefix = "Multiple errors: "))
@@ -116,11 +96,7 @@ data class JsonPropOptional<T : Any, JN : JsonNode>(override val propName: Strin
     @Suppress("UNCHECKED_CAST")
     override fun getter(wrapped: JsonNodeObject): Outcome<JsonError, T?> =
         wrapped.fieldMap[propName]
-            ?.let { idn ->
-                Outcome.tryThis { jf.fromJsonNode(idn as JN) }
-                    .bind { it }//todo add join
-                    .transformFailure { JsonError(idn, it.msg) }
-            }
+            ?.let { idn -> jf.fromJsonNode(idn as JN) }
             ?: null.asSuccess()
 
     override fun setter(value: T?): (JsonNodeObject) -> JsonNodeObject =
