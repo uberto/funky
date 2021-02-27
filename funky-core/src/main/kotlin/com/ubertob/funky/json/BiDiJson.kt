@@ -6,9 +6,6 @@ import com.ubertob.funky.outcome.Outcome
 import com.ubertob.funky.outcome.OutcomeError
 import com.ubertob.funky.outcome.bind
 
-interface StringWrapper {
-    val raw: String
-}
 
 data class JsonError(val node: JsonNode?, val reason: String) : OutcomeError {
     val location = node?.path?.getPath()?.let { "<$it>" } ?: "parsing"

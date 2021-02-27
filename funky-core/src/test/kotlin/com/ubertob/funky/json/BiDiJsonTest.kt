@@ -122,16 +122,16 @@ class BiDiJsonTest {
     fun `Json Customer and back`() {
 
         repeat(10) {
-            val value = randomCustomer()
-            val json = JCustomer.toJsonNode(value, NodeRoot)
+            val value = randomPerson()
+            val json = JPerson.toJsonNode(value, NodeRoot)
 
-            val actual = JCustomer.fromJsonNode(json).expectSuccess()
+            val actual = JPerson.fromJsonNode(json).expectSuccess()
 
             expectThat(actual).isEqualTo(value)
 
-            val jsonStr = JCustomer.toJson(value)
+            val jsonStr = JPerson.toJson(value)
 
-            expectThat(JCustomer.fromJson(jsonStr).expectSuccess()).isEqualTo(value)
+            expectThat(JPerson.fromJson(jsonStr).expectSuccess()).isEqualTo(value)
         }
     }
 
@@ -140,9 +140,9 @@ class BiDiJsonTest {
     fun `json array of Customers`() {
 
         repeat(10) {
-            val jsonUserArray = JArray(JCustomer)
+            val jsonUserArray = JArray(JPerson)
 
-            val value = randomList(0, 10) { randomCustomer() }
+            val value = randomList(0, 10) { randomPerson() }
 
             val node = jsonUserArray.toJsonNode(value, NodeRoot)
 
@@ -280,94 +280,9 @@ class BiDiJsonTest {
 }
 
 
-val toothpaste = Product(1001, "paste", "toothpaste \"whiter than white\"", 12.34)
-val offer = Product(10001, "special offer", "offer for custom fidality", null)
-
-private fun randomCustomer() = Customer(Random.nextInt(1, 1000), randomString(text, 1, 10))
-
-private fun randomProduct() = Product(
-    Random.nextInt(1, 1000),
-    randomString(text, 2, 10),
-    randomText(100),
-    randomNullable { randomPrice(10, 1000) })
-
-private fun randomInvoice() = Invoice(
-    id = InvoiceId(randomString(digits, 5, 5)),
-    vat = Random.nextBoolean(),
-    customer = randomCustomer(),
-    items = randomList(1, 10) { randomProduct() },
-    total = randomPrice(10, 1000)
-)
-
-
-data class Customer(val id: Int, val name: String)
-
-object JCustomer : JAny<Customer>() {
-
-    val id by JField(Customer::id, JInt)
-    val name by JField(Customer::name, JString)
-
-    override fun JsonNodeObject.deserialize() =
-        Customer(
-            id = +id,
-            name = +name
-        )
-}
-
-
-data class Product(val id: Int, val shortDesc: String, val longDesc: String, val price: Double?)
-
-object JProduct : JAny<Product>() {
-
-    val id by JField(Product::id, JInt)
-    val long_description by JField(Product::longDesc, JString)
-    val short_desc by JField(Product::shortDesc, JString)
-    val price by JFieldMaybe(Product::price, JDouble)
-
-    override fun JsonNodeObject.deserialize() =
-        Product(
-            id = +id,
-            shortDesc = +short_desc,
-            longDesc = +long_description,
-            price = +price
-        )
-}
-
-
-data class InvoiceId(override val raw: String) : StringWrapper
-
-
-data class Invoice(
-    val id: InvoiceId,
-    val vat: Boolean,
-    val customer: Customer,
-    val items: List<Product>,
-    val total: Double
-)
-
-object JInvoice : JAny<Invoice>() {
-    val id by JField(Invoice::id, JStringWrapper(::InvoiceId))
-    val vat by JField(Invoice::vat, JBoolean, jsonFieldName = "vat-to-pay")
-    val customer by JField(Invoice::customer, JCustomer)
-    val items by JField(Invoice::items, JArray(JProduct))
-    val total by JField(Invoice::total, JDouble)
-
-    override fun JsonNodeObject.deserialize(): Invoice =
-        Invoice(
-            id = +id,
-            vat = +vat,
-            customer = +customer,
-            items = +items,
-            total = +total
-        )
-
-}
-
 
 //todo
-// add common JBidi (JInstant, JSealed JEnum etc.)
 // check with Java
-// recheck for all unchecked cast
 // add prettyPrint/compactPrint options
 // add null/skipField option
 // add parseJson from Reader

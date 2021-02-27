@@ -1,96 +1,92 @@
 package com.ubertob.funky.json
 
-/*
-object JBigDecimal : BiDiJson<BigDecimal, JsonNodeString> {
+import com.ubertob.funky.outcome.Outcome
+import java.math.BigDecimal
+import java.time.Instant
+import java.time.LocalDate
+import java.util.*
 
-    override fun fromJsonNode(node: JsonNodeString): Outcome<JsonError, BigDecimal> = node.asText().transform(::BigDecimal)
-    override fun toJsonNode(value: BigDecimal, path: NodePath): JsonNodeString = JsonNodeString(value.toString(), path)
-    override fun parseToNode(tokensStream: TokensStream, path: NodePath): JsonOutcome<JsonNodeString> =
-        JString.parseToNode(tokensStream, path)
-
+interface StringWrapper {
+    val raw: String
 }
 
 
-
-object JCurrency : BiDiJson<Currency, JsonNodeString> {
-    override fun extract(wrapped: JsonNodeString): Outcome<JsonError, Currency> = wrapped.asText().map(Currency::getInstance)
-
-    override fun build(value: Currency): JsonNodeString = JsonNodeString(value.currencyCode)
+data class JStringWrapper<T : StringWrapper>(override val cons: (String) -> T) : JStringRepresentable<T>() {
+    override val render: (T) -> String = { it.raw }
 }
 
-data class JEnum<E : Enum<E>>(val cons: (String) -> E) : BiDiJson<E, JsonNodeString> {
-    override fun extract(wrapped: JsonNodeString): Outcome<JsonError, E> =
-        wrapped.asText().map(cons)
-
-    override fun build(value: E): JsonNodeString =
-        JsonNodeString(value.name)
-
+object JBigDecimal : JStringRepresentable<BigDecimal>() {
+    override val cons: (String) -> BigDecimal = ::BigDecimal
+    override val render: (BigDecimal) -> String = BigDecimal::toString
 }
 
-
-
-object JInstant : BiDiJson<Instant, JsonNodeLong> {
-
-    override fun extract(wrapped: AbstractJsonNode): Outcome<JsonError, Instant> =
-
-        wrapped.asText().flatMapTry(Instant::parse,
-            onError = { s, t ->
-                JsonError(wrapped, "exception parsing $s, ${t.message}")
-            }
-        )
-
-    override fun build(value: Instant): AbstractJsonNode = JsonNodeString(value.toString())
-
+object JCurrency : JStringRepresentable<Currency>() {
+    override val cons: (String) -> Currency = Currency::getInstance
+    override val render: (Currency) -> String = Currency::getCurrencyCode
 }
 
+data class JEnum<E : Enum<E>>(override val cons: (String) -> E) : JStringRepresentable<E>() {
+    override val render: (E) -> String = { it.name }
+}
 
-object JInstantD : BiDiJson<Instant, JsonNodeString> {
-    override fun fromJsonNode(node: JsonNodeString): JsonOutcome<Instant> {
-        TODO("Not yet implemented")
-    }
+object JInstantD : JStringRepresentable<Instant>() {
+    override val cons: (String) -> Instant = Instant::parse
+    override val render: (Instant) -> String = Instant::toString
+}
 
-    override fun toJsonNode(value: Instant, path: NodePath): JsonNodeString {
-        TODO("Not yet implemented")
-    }
+object JInstant : JNumRepresentable<Instant>() {
+    override val cons: (BigDecimal) -> Instant = { Instant.ofEpochMilli(it.toLong()) }
+    override val render: (Instant) -> BigDecimal = { it.toEpochMilli().toBigDecimal() }
+}
 
-    override fun parseToNode(tokensStream: TokensStream, path: NodePath): JsonOutcome<JsonNodeString> {
-        TODO("Not yet implemented")
-    }
+object JLocalDate : JStringRepresentable<LocalDate>() {
+    override val cons: (String) -> LocalDate = LocalDate::parse
+    override val render: (LocalDate) -> String = LocalDate::toString
+}
 
+//for serializing Kotlin object and other single instance types
+data class JInstance<T : Any>(val singleton: T) : JAny<T>() {
+    override fun JsonNodeObject.deserializeOrThrow() = singleton
 }
 
 
-object JLocalDate : BiDiJson<LocalDate, JsonNodeString> {
-
-    override fun extract(wrapped: JsonNodeString): Outcome<JsonError, LocalDate> =
-
-        wrapped.asText().flatMapTry(LocalDate::parse,
-            onError = { s, t ->
-                JsonError(wrapped, "exception parsing $s, ${t.message}")
-            }
-        )
-
-    override fun build(value: LocalDate): JsonNodeString = JsonNodeString(value.toString())
-
-}
-
-
-data class JSingleton<T : Any>(val singleton: T) : JAny<T>() {
-    override fun deserialize1(from: JsonNodeObject): Outcome<JsonError, T> =
-        singleton.asSuccess()
-
-    override fun serialize(aValue: T): JsonNodeObject =
-        JsonNodeObject(emptyMap())
-}
-
-
-interface JSealed<T : Any> : JAny<T> {
+interface JSealed<T : Any> : JObjectBase<T> {
 
     val typeName: String
-        get() = "type"
+        get() = "_type"
 
-    val subtypesMap: Map<String, JProtocol<out T>>
+    val subtypesMap: Map<String, JObjectBase<out T>>
 
+    override fun JsonNodeObject.deserializeOrThrow(): T? =
+        subtypesMap[typeName]
+            ?.fromJsonNode(this)
+            ?.orThrow()
+            ?: error("subtype not known $typeName")
+
+
+    override fun toJsonNode(value: T, path: NodePath): JsonNodeObject =
+        getWriters()
+            .fold(JsonNodeObject(emptyMap(), path)) { acc, writer ->
+                writer(acc, value)
+            }
+
+    override fun parseToNode(tokensStream: TokensStream, path: NodePath): Outcome<JsonError, JsonNodeObject> =
+        TODO("parseToNode")
+
+    override fun getWriters(): Set<NodeWriter<T>> {
+        TODO("Not yet implemented")
+    }
+
+    override fun getParsers(): Map<String, TokenStreamParser<JsonNode>> {
+        TODO("Not yet implemented")
+    }
+
+    @Suppress("UNCHECKED_CAST")
+    fun <U : T> convertToNodeObj(conv: JObjectBase<out T>, subtype: String, aValue: U, path: NodePath): JsonNodeObject =
+        (conv as? JObjectBase<U>
+            ?: error("subtype $subtype does not match with $aValue")).toJsonNode(aValue, path)
+
+    /*
     fun <U : T> serializeSubtype(subtype: String, aValue: U): JsonNodeObject {
         val conv = subtypesMap[subtype] ?: throw UnknownSubtypeException("subtype not known $subtype")
         val jsonNodeObject = convertToNodeObj(conv, subtype, aValue)
@@ -108,122 +104,35 @@ interface JSealed<T : Any> : JAny<T> {
                 ?.deserialize1(from)
                 ?: JsonError(from, "subtype not known $subtype").asFailure()
         }
+
+     */
 }
 
-class JProperties<T : Any>(private val valueConverter: BiDiJson<T, JsonNodeObject>) : BiDiJson<Map<String, T>> {
-    override fun extract(wrapped: JsonNodeObject): Outcome<JsonError, Map<String, T>> =
-        wrapped.asObject {
-            fieldMap.mapValues { entry ->
-                valueConverter.extract(entry.value)
-                    .onFailure { return@asObject it }
-            }.asSuccess()
-        }
+class JMap<T : Any>(private val valueConverter: JObjectBase<T>) : JObjectBase<Map<String, T>> {
+    override fun JsonNodeObject.deserializeOrThrow(): Map<String, T>? {
+        TODO("Not yet implemented")
+    }
 
-    override fun build(value: Map<String, T>): JsonNodeObject =
-        JsonNodeObject(value.mapValues { valueConverter.build(it.value) })
+    override fun getWriters(): Set<NodeWriter<Map<String, T>>> {
+        TODO("Not yet implemented")
+    }
+
+    override fun getParsers(): Map<String, TokenStreamParser<JsonNode>> {
+        TODO("Not yet implemented")
+    }
+
+    override fun parseToNode(tokensStream: TokensStream, path: NodePath): JsonOutcome<JsonNodeObject> {
+        TODO("Not yet implemented")
+    }
+//    override fun extract(wrapped: JsonNodeObject): JsonOutcome<Map<String, T>> =
+//        wrapped.asObject {
+//            fieldMap.mapValues { entry ->
+//                valueConverter.extract(entry.value)
+//                    .onFailure { return@asObject it }
+//            }.asSuccess()
+//        }
+//
+//    override fun build(value: Map<String, T>): JsonNodeObject =
+//        JsonNodeObject(value.mapValues { valueConverter.build(it.value) })
 }
 
-*/
-
-//
-//abstract class JAny<T : Any> : JProtocol<T> {
-//
-//    private val nodeWriters: AtomicReference<Set<NodeWriter<T>>> = AtomicReference(emptySet())
-//    private val nodeReaders: AtomicReference<Set<NodeReader<*>>> = AtomicReference(emptySet())
-//
-//    internal fun registerSetter(nodeWriter: NodeWriter<T>) {
-//        nodeWriters.getAndUpdate { set -> set + nodeWriter }
-//    }
-//
-//    internal fun registerGetter(nodeReader: NodeReader<*>) {
-//        nodeReaders.getAndUpdate { set -> set + nodeReader }
-//    }
-//
-//    override fun deserialize1(from: JsonNodeObject): Result<JsonError, T> =
-//        from.deserialize()
-//
-//
-//    // TODO activate the new style one by one and then remove the open and TODO() and leave it as abstract
-//    open fun JsonNodeObject.tryDeserialize(): T? = TODO("tryDeserialize not implemented")
-//
-//    override fun JsonNodeObject.deserialize(): Result<JsonError, T> =
-//        tryCatchResult({
-//            tryDeserialize() ?: throw JsonParsingException(JsonError(this, "tryDeserialize returned null!"))
-//        }, { throwable ->
-//            when (throwable) {
-//                is JsonParsingException -> throwable.error // to keep path info
-//                else                    -> JsonError(this, throwable.message.orEmpty())
-//            }
-//        })
-//
-//
-//    override fun serialize(aValue: T): JsonNodeObject =
-//        nodeWriters.get()
-//            .map { nw -> { jno: JsonNodeObject -> nw(jno, aValue) } }.fold(JsonNodeObject(emptyMap())) { acc, setter ->
-//                setter(acc)
-//            }
-//}
-
-//
-//data class UnknownSubtypeException(override val message: String?) : RuntimeException()
-//
-//
-////---
-//
-//interface Lens<A, B : Any, C : Result<*, A>> {
-//    fun setter(value: A): (B) -> B
-//    fun getter(wrapped: B): C
-//}
-//
-//sealed class JsonProperty<T> : Lens<T, JsonNodeObject, JsonResult<T>> {
-//    abstract val propName: String
-//
-//    abstract fun setTo(value: T): Pair<String, AbstractJsonNode>? //todo switch to setter
-//    abstract fun getFrom(node: JsonNodeObject): Result<JsonError, T>  //todo switch to setter
-//}
-//
-//
-//private data class JsonProp<T : Any>(override val propName: String, val conv: JsonAdjoint<T>) : JsonProperty<T>() {
-//
-//    override fun getFrom(node: JsonNodeObject): Result<JsonError, T> =
-//        conv.getFieldFromNode(node, propName)
-//
-//    override fun setTo(value: T): Pair<String, AbstractJsonNode>? =
-//        propName to conv.build(value)
-//
-//    override fun getter(wrapped: JsonNodeObject): JsonResult<T> = getFrom(wrapped)
-//
-//    override fun setter(value: T): (JsonNodeObject) -> JsonNodeObject =
-//        { wrapped ->
-//            wrapped.copy(fieldMap = wrapped.fieldMap + (propName to conv.build(value)))
-//        }
-//
-//}
-
-//private data class JsonPropOptional<T : Any>(override val propName: String, val conv: JsonAdjoint<T>) : JsonProperty<T?>() {
-//
-//    override fun getFrom(node: JsonNodeObject): Result<JsonError, T?> =
-//        node.fieldMap[propName]
-//            ?.let { idn -> conv.extract(idn) }
-//            ?: null.asSuccess()
-//
-//    override fun setTo(value: T?): Pair<String, AbstractJsonNode>? =
-//        value?.let {
-//            propName to conv.build(it)
-//        }
-//
-//    override fun getter(wrapped: JsonNodeObject): JsonResult<T?> = getFrom(wrapped)
-//
-//    override fun setter(value: T?): (JsonNodeObject) -> JsonNodeObject = { wrapped ->
-//        value?.let {
-//            wrapped.copy(fieldMap = wrapped.fieldMap + (propName to conv.build(it)))
-//        } ?: wrapped
-//    }
-//
-//}
-//
-//fun <T : Any> JsonAdjoint<T>.getFieldFromNode(node: JsonNodeObject, propName: String): Result<JsonError, T> {
-//    return (node.fieldMap[propName]
-//        ?.let { idn -> extract(idn) }
-//        ?: JsonError(node, "Not found $propName").asFailure())
-//}

@@ -1,7 +1,6 @@
 package com.ubertob.funky.json
 
 import com.ubertob.funky.outcome.Outcome
-import com.ubertob.funky.outcome.OutcomeError
 import com.ubertob.funky.outcome.asFailure
 import com.ubertob.funky.outcome.asSuccess
 import java.util.concurrent.atomic.AtomicReference
@@ -10,50 +9,59 @@ import kotlin.reflect.KProperty
 
 
 typealias NodeWriter<T> = (JsonNodeObject, T) -> JsonNodeObject
-typealias NodeReader<T> = (JsonNodeObject) -> T
 
-abstract class JAny<T : Any> : BiDiJson<T, JsonNodeObject> {
+interface JObjectBase<T : Any> : BiDiJson<T, JsonNodeObject> {
 
-    private val nodeWriters: AtomicReference<Set<NodeWriter<T>>> = AtomicReference(emptySet())
-    private val nodeReaders: AtomicReference<Set<NodeReader<*>>> = AtomicReference(emptySet())
-    private val fieldParsers: AtomicReference<Map<String, TokenStreamParser<JsonNode>>> = AtomicReference(emptyMap())
-
-    internal fun registerSetter(nodeWriter: NodeWriter<T>) {
-        nodeWriters.getAndUpdate { set -> set + nodeWriter }
-    }
-
-    internal fun registerGetter(nodeReader: NodeReader<*>) {
-        nodeReaders.getAndUpdate { set -> set + nodeReader }
-    }
-
-    internal fun registerParser(fieldName: String, parser: TokenStreamParser<JsonNode>) {
-        fieldParsers.getAndUpdate { map -> map + (fieldName to parser) }
-    }
+    fun JsonNodeObject.deserializeOrThrow(): T?
 
     override fun fromJsonNode(node: JsonNodeObject): JsonOutcome<T> =
         tryFromNode(node) {
-            node.deserialize() ?: throw JsonParsingException(
+            node.deserializeOrThrow() ?: throw JsonParsingException(
                 JsonError(node, "tryDeserialize returned null!")
             )
         }
 
+    fun getWriters(): Set<NodeWriter<T>>
+    fun getParsers(): Map<String, TokenStreamParser<JsonNode>>
 
     override fun toJsonNode(value: T, path: NodePath): JsonNodeObject =
-        nodeWriters.get()
+        getWriters()
             .fold(JsonNodeObject(emptyMap(), path)) { acc, writer ->
                 writer(acc, value)
             }
 
+//    override fun parseToNode(tokensStream: TokensStream, path: NodePath): Outcome<JsonError, JsonNodeObject> =
+//        parseJsonNodeObject(tokensStream, path)
+
+}
+
+
+abstract class JAny<T : Any> : JObjectBase<T> {
+
+    private val nodeWriters: AtomicReference<Set<NodeWriter<T>>> = AtomicReference(emptySet())
+    private val nodeParsers: AtomicReference<Map<String, TokenStreamParser<JsonNode>>> = AtomicReference(emptyMap())
+
     override fun parseToNode(tokensStream: TokensStream, path: NodePath): Outcome<JsonError, JsonNodeObject> =
-        parseJsonNodeObject(tokensStream, fieldParsers.get(), path)
+        parseJsonNodeObject(tokensStream, path, nodeParsers.get())
 
+    override fun getWriters(): Set<NodeWriter<T>> = nodeWriters.get()
 
-    //it's safe to throw exceptions, they will be caught
-    abstract fun JsonNodeObject.deserialize(): T?
+    override fun getParsers(): Map<String, TokenStreamParser<JsonNode>> = nodeParsers.get()
 
+    private fun registerSetter(nodeWriter: NodeWriter<T>) {
+        nodeWriters.getAndUpdate { set -> set + nodeWriter }
+    }
 
-    private fun multipleErrors(jsonNode: JsonNodeObject, errors: List<OutcomeError>): JsonError =
-        JsonError(jsonNode, errors.joinToString(prefix = "Multiple errors: "))
+    private fun registerParser(fieldName: String, parser: TokenStreamParser<JsonNode>) {
+        nodeParsers.getAndUpdate { map -> map + (fieldName to parser) }
+    }
+
+    internal fun <FT> registerProperty(jsonProperty: JsonProperty<FT>, binder: (T) -> FT) {
+        registerSetter { jno, obj -> jsonProperty.setter(binder(obj))(jno) }
+
+        registerParser(jsonProperty.propName, jsonProperty::parser)
+    }
+
 
 }
 
@@ -130,9 +138,7 @@ sealed class JFieldBase<T, PT : Any>
 
     operator fun provideDelegate(thisRef: JAny<PT>, prop: KProperty<*>): JFieldBase<T, PT> {
         val jp = buildJsonProperty(prop)
-        thisRef.registerSetter { jno, obj -> jp.setter(binder(obj))(jno) }
-        thisRef.registerGetter(jp::getter)
-        thisRef.registerParser(jp.propName, jp::parser)
+        thisRef.registerProperty(jp, binder)
         return this
     }
 

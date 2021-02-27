@@ -4,6 +4,7 @@ import com.ubertob.funky.outcome.Outcome
 import com.ubertob.funky.outcome.Outcome.Companion.tryThis
 import com.ubertob.funky.outcome.asFailure
 import com.ubertob.funky.outcome.onFailure
+import java.math.BigDecimal
 
 inline fun <T> tryParse(f: () -> T): Outcome<JsonError, T> = tryThis(f).transformFailure { JsonError(null, it.msg) }
 
@@ -30,39 +31,14 @@ fun parseJsonNodeBoolean(
         }
     }
 
-fun parseJsonNodeDouble(
+fun parseJsonNodeNum(
     tokens: TokensStream,
     path: NodePath
-): Outcome<JsonError, JsonNodeDouble> =
+): Outcome<JsonError, JsonNodeNum> =
     tryParse {
-        JsonNodeDouble(tokens.next().let {
-            it.toDoubleOrNull()
-                ?: return parsingFailure("a Double", tokens.position(), it, path)
-        }, path)
+        JsonNodeNum(BigDecimal(tokens.next()), path)
     }
 
-
-fun parseJsonNodeInt(
-    tokens: TokensStream,
-    path: NodePath
-): Outcome<JsonError, JsonNodeInt> =
-    tryParse {
-        JsonNodeInt(tokens.next().let {
-            it.toIntOrNull()
-                ?: return parsingFailure("an Int", tokens.position(), it, path)
-        }, path)
-    }
-
-fun parseJsonNodeLong(
-    tokens: TokensStream,
-    path: NodePath
-): Outcome<JsonError, JsonNodeLong> =
-    tryParse {
-        JsonNodeLong(tokens.next().let {
-            it.toLongOrNull()
-                ?: return parsingFailure("a Long", tokens.position(), it, path)
-        }, path)
-    }
 
 fun parseJsonNodeNull(
     tokens: TokensStream,
@@ -122,8 +98,8 @@ fun <JN : JsonNode> parseJsonNodeArray(
 
 fun parseJsonNodeObject(
     tokens: TokensStream,
-    fieldParsers: Map<String, TokenStreamParser<JsonNode>>,
-    path: NodePath
+    path: NodePath,
+    fieldParsers: Map<String, TokenStreamParser<JsonNode>>
 ): Outcome<JsonError, JsonNodeObject> =
     tryParse {
         val openCurly = tokens.next()
@@ -151,15 +127,15 @@ fun parseJsonNodeObject(
 
     }
 
+fun parseNode(tokens: TokensStream, path: NodePath): JsonOutcome<JsonNode> = TODO("parseNode")
+
 
 fun JsonNode.render(): String =
     when (this) {
         is JsonNodeNull -> "null"
         is JsonNodeString -> text.putInQuotes()
-        is JsonNodeInt -> num.toString()
         is JsonNodeBoolean -> value.toString()
-        is JsonNodeLong -> num.toString()
-        is JsonNodeDouble -> num.toString()
+        is JsonNodeNum -> num.toString()
         is JsonNodeArray<*> -> values.map { it.render() }.joinToString(prefix = "[", postfix = "]")
         is JsonNodeObject -> fieldMap.entries.map { it.key.putInQuotes() + ": " + it.value.render() }
             .joinToString(prefix = "{", postfix = "}")

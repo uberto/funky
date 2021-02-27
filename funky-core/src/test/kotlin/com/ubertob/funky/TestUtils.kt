@@ -40,7 +40,8 @@ private fun randomInBetween(maxLen: Int, minLen: Int) =
 
 fun randomText(len: Int) = randomString(text, len, len)
 
-fun <T> randomList(minLen: Int, maxLen: Int, f: () -> T): List<T> = (0..randomInBetween(maxLen, minLen)).map { f() }
+fun <T> randomList(minLen: Int, maxLen: Int, f: (index: Int) -> T): List<T> =
+    (0..randomInBetween(maxLen, minLen)).map { f(it) }
 
 fun <T> randomNullable(f: () -> T): T? = if (Random.nextBoolean()) f() else null
 

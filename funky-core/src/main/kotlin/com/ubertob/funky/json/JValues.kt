@@ -3,6 +3,7 @@ package com.ubertob.funky.json
 import com.ubertob.funky.outcome.Outcome
 import com.ubertob.funky.outcome.asSuccess
 import com.ubertob.funky.outcome.extract
+import java.math.BigDecimal
 
 
 object JBoolean : BiDiJson<Boolean, JsonNodeBoolean> {
@@ -23,29 +24,21 @@ object JString : BiDiJson<String, JsonNodeString> {
 
 }
 
-object JInt : BiDiJson<Int, JsonNodeInt> {
+object JDouble : JNumRepresentable<Double>() {
 
-    override fun fromJsonNode(node: JsonNodeInt): JsonOutcome<Int> = node.num.asSuccess()
-    override fun toJsonNode(value: Int, path: NodePath): JsonNodeInt = JsonNodeInt(value, path)
-    override fun parseToNode(tokensStream: TokensStream, path: NodePath): JsonOutcome<JsonNodeInt> =
-        parseJsonNodeInt(tokensStream, path)
+    override val cons: (BigDecimal) -> Double = BigDecimal::toDouble
+    override val render: (Double) -> BigDecimal = Double::toBigDecimal
 }
 
 
-object JLong : BiDiJson<Long, JsonNodeLong> {
-
-    override fun fromJsonNode(node: JsonNodeLong): JsonOutcome<Long> = node.num.asSuccess()
-    override fun toJsonNode(value: Long, path: NodePath): JsonNodeLong = JsonNodeLong(value, path)
-    override fun parseToNode(tokensStream: TokensStream, path: NodePath): JsonOutcome<JsonNodeLong> =
-        parseJsonNodeLong(tokensStream, path)
+object JInt : JNumRepresentable<Int>() {
+    override val cons: (BigDecimal) -> Int = BigDecimal::toInt
+    override val render: (Int) -> BigDecimal = Int::toBigDecimal
 }
 
-object JDouble : BiDiJson<Double, JsonNodeDouble> {
-
-    override fun fromJsonNode(node: JsonNodeDouble): JsonOutcome<Double> = node.num.asSuccess()
-    override fun toJsonNode(value: Double, path: NodePath): JsonNodeDouble = JsonNodeDouble(value, path)
-    override fun parseToNode(tokensStream: TokensStream, path: NodePath): JsonOutcome<JsonNodeDouble> =
-        parseJsonNodeDouble(tokensStream, path)
+object JLong : JNumRepresentable<Long>() {
+    override val cons: (BigDecimal) -> Long = BigDecimal::toLong
+    override val render: (Long) -> BigDecimal = Long::toBigDecimal
 }
 
 fun <T : Any> tryFromNode(node: JsonNode, f: () -> T): JsonOutcome<T> =
@@ -58,13 +51,26 @@ fun <T : Any> tryFromNode(node: JsonNode, f: () -> T): JsonOutcome<T> =
         }
     }
 
-data class JStringWrapper<T : StringWrapper>(val cons: (String) -> T) : BiDiJson<T, JsonNodeString> {
+abstract class JNumRepresentable<T : Any>() : BiDiJson<T, JsonNodeNum> {
+    abstract val cons: (BigDecimal) -> T
+    abstract val render: (T) -> BigDecimal
+
+    override fun fromJsonNode(node: JsonNodeNum): JsonOutcome<T> = tryFromNode(node) { cons(node.num) }
+    override fun toJsonNode(value: T, path: NodePath): JsonNodeNum = JsonNodeNum(render(value), path)
+    override fun parseToNode(tokensStream: TokensStream, path: NodePath): JsonOutcome<JsonNodeNum> =
+        parseJsonNodeNum(tokensStream, path)
+}
+
+abstract class JStringRepresentable<T : Any>() : BiDiJson<T, JsonNodeString> {
+    abstract val cons: (String) -> T
+    abstract val render: (T) -> String
 
     override fun fromJsonNode(node: JsonNodeString): JsonOutcome<T> = tryFromNode(node) { cons(node.text) }
-    override fun toJsonNode(value: T, path: NodePath): JsonNodeString = JsonNodeString(value.raw, path)
+    override fun toJsonNode(value: T, path: NodePath): JsonNodeString = JsonNodeString(render(value), path)
     override fun parseToNode(tokensStream: TokensStream, path: NodePath): JsonOutcome<JsonNodeString> =
         JString.parseToNode(tokensStream, path)
 }
+
 
 data class JArray<T : Any, JN : JsonNode>(val helper: BiDiJson<T, JN>) : BiDiJson<List<T>, JsonNodeArray<JN>> {
 
