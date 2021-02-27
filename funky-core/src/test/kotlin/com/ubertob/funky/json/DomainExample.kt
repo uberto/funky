@@ -109,6 +109,12 @@ object JCustomer : JSealed<Customer> {
             "company" to JCompany
         )
 
+    override fun extractTypeName(obj: Customer): String =
+        when (obj) {
+            is Person -> "private"
+            is Company -> "company"
+        }
+
 }
 
 object JInvoice : JAny<Invoice>() {

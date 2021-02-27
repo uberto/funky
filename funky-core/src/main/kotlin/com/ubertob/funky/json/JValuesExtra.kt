@@ -1,6 +1,5 @@
 package com.ubertob.funky.json
 
-import com.ubertob.funky.outcome.Outcome
 import java.math.BigDecimal
 import java.math.BigInteger
 import java.time.Instant
@@ -59,60 +58,36 @@ data class JInstance<T : Any>(val singleton: T) : JAny<T>() {
 
 interface JSealed<T : Any> : JObjectBase<T> {
 
-    val typeName: String
+    val typeFieldName: String
         get() = "_type"
+
+    fun typeWriter(jno: JsonNodeObject, obj: T): JsonNodeObject =
+        jno.copy(
+            fieldMap = jno.fieldMap + (typeFieldName to JsonNodeString(
+                extractTypeName(obj),
+                Node(typeFieldName, jno.path)
+            ))
+        )
+
+    fun extractTypeName(obj: T): String
 
     val subtypesMap: Map<String, JObjectBase<out T>>
 
-    override fun JsonNodeObject.deserializeOrThrow(): T? =
-        subtypesMap[typeName]
-            ?.fromJsonNode(this)
-            ?.orThrow()
-            ?: error("subtype not known $typeName")
-
-
-    override fun toJsonNode(value: T, path: NodePath): JsonNodeObject =
-        getWriters()
-            .fold(JsonNodeObject(emptyMap(), path)) { acc, writer ->
-                writer(acc, value)
-            }
-
-    override fun parseToNode(tokensStream: TokensStream, path: NodePath): Outcome<JsonError, JsonNodeObject> =
-        TODO("parseToNode")
-
-    override fun getWriters(): Set<NodeWriter<T>> {
-        TODO("Not yet implemented")
+    override fun JsonNodeObject.deserializeOrThrow(): T? {
+        val typeName: JsonNodeString =
+            fieldMap[typeFieldName] as? JsonNodeString ?: error("expected field $typeFieldName not found!")
+        val bidiJson = subtypesMap[typeName.text] ?: error("subtype not known $typeName")
+        return bidiJson.fromJsonNode(this).orThrow()
     }
 
-    override fun getParsers(): Map<String, TokenStreamParser<JsonNode>> {
-        TODO("Not yet implemented")
-    }
 
     @Suppress("UNCHECKED_CAST")
-    fun <U : T> convertToNodeObj(conv: JObjectBase<out T>, subtype: String, aValue: U, path: NodePath): JsonNodeObject =
-        (conv as? JObjectBase<U>
-            ?: error("subtype $subtype does not match with $aValue")).toJsonNode(aValue, path)
-
-    /*
-    fun <U : T> serializeSubtype(subtype: String, aValue: U): JsonNodeObject {
-        val conv = subtypesMap[subtype] ?: throw UnknownSubtypeException("subtype not known $subtype")
-        val jsonNodeObject = convertToNodeObj(conv, subtype, aValue)
-        return writeObjNode(typeName to JString.build(subtype), *jsonNodeObject.fieldMap.toList().toTypedArray())
+    override fun getWriters(value: T): Sequence<NodeWriter<T>> = sequence {
+        val typeName = extractTypeName(value)
+        yield(::typeWriter)
+        yieldAll(subtypesMap[typeName]?.let { (it as JObjectBase<T>).getWriters(value) }
+            ?: error("subtype not known $typeName"))
     }
-
-    @Suppress("UNCHECKED_CAST")
-    fun <U : T> convertToNodeObj(conv: JProtocol<out T>, subtype: String, aValue: U): JsonNodeObject =
-        (conv as? JProtocol<U>
-            ?: throw UnknownSubtypeException("subtype $subtype does not match with $aValue")).serialize(aValue)
-
-    override fun deserialize1(from: JsonNodeObject): Outcome<JsonError, T> =
-        JString.getFieldFromNode(from, typeName).flatMap { subtype ->
-            subtypesMap.get(subtype)
-                ?.deserialize1(from)
-                ?: JsonError(from, "subtype not known $subtype").asFailure()
-        }
-
-     */
 }
 
 class JMap<T : Any>(private val valueConverter: JObjectBase<T>) : JObjectBase<Map<String, T>> {
@@ -120,15 +95,12 @@ class JMap<T : Any>(private val valueConverter: JObjectBase<T>) : JObjectBase<Ma
         TODO("Not yet implemented")
     }
 
-    override fun getWriters(): Set<NodeWriter<Map<String, T>>> {
-        TODO("Not yet implemented")
-    }
-
-    override fun getParsers(): Map<String, TokenStreamParser<JsonNode>> {
-        TODO("Not yet implemented")
-    }
 
     override fun parseToNode(tokensStream: TokensStream, path: NodePath): JsonOutcome<JsonNodeObject> {
+        TODO("Not yet implemented")
+    }
+
+    override fun getWriters(value: Map<String, T>): Sequence<NodeWriter<Map<String, T>>> {
         TODO("Not yet implemented")
     }
 //    override fun extract(wrapped: JsonNodeObject): JsonOutcome<Map<String, T>> =

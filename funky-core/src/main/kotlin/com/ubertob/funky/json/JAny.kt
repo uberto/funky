@@ -21,17 +21,16 @@ interface JObjectBase<T : Any> : BiDiJson<T, JsonNodeObject> {
             )
         }
 
-    fun getWriters(): Set<NodeWriter<T>>
-    fun getParsers(): Map<String, TokenStreamParser<JsonNode>>
+    fun getWriters(value: T): Sequence<NodeWriter<T>>
 
     override fun toJsonNode(value: T, path: NodePath): JsonNodeObject =
-        getWriters()
+        getWriters(value)
             .fold(JsonNodeObject(emptyMap(), path)) { acc, writer ->
                 writer(acc, value)
             }
 
-//    override fun parseToNode(tokensStream: TokensStream, path: NodePath): Outcome<JsonError, JsonNodeObject> =
-//        parseJsonNodeObject(tokensStream, path)
+    override fun parseToNode(tokensStream: TokensStream, path: NodePath): Outcome<JsonError, JsonNodeObject> =
+        parseJsonNodeObject(tokensStream, path)
 
 }
 
@@ -39,29 +38,19 @@ interface JObjectBase<T : Any> : BiDiJson<T, JsonNodeObject> {
 abstract class JAny<T : Any> : JObjectBase<T> {
 
     private val nodeWriters: AtomicReference<Set<NodeWriter<T>>> = AtomicReference(emptySet())
-    private val nodeParsers: AtomicReference<Map<String, TokenStreamParser<JsonNode>>> = AtomicReference(emptyMap())
 
     override fun parseToNode(tokensStream: TokensStream, path: NodePath): Outcome<JsonError, JsonNodeObject> =
         parseJsonNodeObject(tokensStream, path)
 
-    override fun getWriters(): Set<NodeWriter<T>> = nodeWriters.get()
-
-    override fun getParsers(): Map<String, TokenStreamParser<JsonNode>> = nodeParsers.get()
+    override fun getWriters(value: T): Sequence<NodeWriter<T>> = nodeWriters.get().asSequence()
 
     private fun registerSetter(nodeWriter: NodeWriter<T>) {
         nodeWriters.getAndUpdate { set -> set + nodeWriter }
     }
 
-    private fun registerParser(fieldName: String, parser: TokenStreamParser<JsonNode>) {
-        nodeParsers.getAndUpdate { map -> map + (fieldName to parser) }
-    }
-
     internal fun <FT> registerProperty(jsonProperty: JsonProperty<FT>, binder: (T) -> FT) {
         registerSetter { jno, obj -> jsonProperty.setter(binder(obj))(jno) }
-
-        registerParser(jsonProperty.propName, jsonProperty::parser)
     }
-
 
 }
 

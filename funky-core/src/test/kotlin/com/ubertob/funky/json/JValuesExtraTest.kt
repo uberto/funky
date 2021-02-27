@@ -43,7 +43,8 @@ class JValuesExtraTest {
         }
     }
 
-//add test JInstance and JMap
+
+//add tests for JInstance and JMap
 }
 
 
