@@ -2,6 +2,7 @@ package com.ubertob.funky.json
 
 import com.ubertob.funky.outcome.Outcome
 import java.math.BigDecimal
+import java.math.BigInteger
 import java.time.Instant
 import java.time.LocalDate
 import java.util.*
@@ -15,10 +16,16 @@ data class JStringWrapper<T : StringWrapper>(override val cons: (String) -> T) :
     override val render: (T) -> String = { it.raw }
 }
 
-object JBigDecimal : JStringRepresentable<BigDecimal>() {
-    override val cons: (String) -> BigDecimal = ::BigDecimal
-    override val render: (BigDecimal) -> String = BigDecimal::toString
+object JBigDecimal : JNumRepresentable<BigDecimal>() {
+    override val cons: (BigDecimal) -> BigDecimal = { it }
+    override val render: (BigDecimal) -> BigDecimal = { it }
 }
+
+object JBigInteger : JNumRepresentable<BigInteger>() {
+    override val cons: (BigDecimal) -> BigInteger = BigDecimal::toBigInteger
+    override val render: (BigInteger) -> BigDecimal = BigInteger::toBigDecimal
+}
+
 
 object JCurrency : JStringRepresentable<Currency>() {
     override val cons: (String) -> Currency = Currency::getInstance
