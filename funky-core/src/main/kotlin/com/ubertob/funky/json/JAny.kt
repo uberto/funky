@@ -42,7 +42,7 @@ abstract class JAny<T : Any> : JObjectBase<T> {
     private val nodeParsers: AtomicReference<Map<String, TokenStreamParser<JsonNode>>> = AtomicReference(emptyMap())
 
     override fun parseToNode(tokensStream: TokensStream, path: NodePath): Outcome<JsonError, JsonNodeObject> =
-        parseJsonNodeObject(tokensStream, path, nodeParsers.get())
+        parseJsonNodeObject(tokensStream, path)
 
     override fun getWriters(): Set<NodeWriter<T>> = nodeWriters.get()
 

@@ -69,20 +69,20 @@ fun parseJsonNodeString(
 typealias TokenStreamParser<T> = (TokensStream, NodePath) -> JsonOutcome<T>
 
 
-fun <JN : JsonNode> parseJsonNodeArray(
+fun parseJsonNodeArray(
     tokens: TokensStream,
-    tokenParser: TokenStreamParser<JN>,
     path: NodePath
-): JsonOutcome<JsonNodeArray<JN>> =
+): JsonOutcome<JsonNodeArray> =
     tryParse {
         val openBraket = tokens.next()
         if (openBraket != "[") return parsingFailure("'['", tokens.position(), openBraket, path)
         else {
             var currToken = tokens.peek()
-            val nodes = mutableListOf<JN>()
+            val nodes = mutableListOf<JsonNode>()
             var currNode = 0
             while (currToken != "]") {
-                nodes.add(tokenParser(tokens, Node("${currNode++}", path)).onFailure { return it.asFailure() })
+                nodes.add(
+                    parseNewNode(tokens, Node("${currNode++}", path)).onFailure { return it.asFailure() })
                 currToken = tokens.peek()
                 if (currToken != "," && currToken != "]") return parsingFailure(
                     "',' or ':'",
@@ -98,8 +98,7 @@ fun <JN : JsonNode> parseJsonNodeArray(
 
 fun parseJsonNodeObject(
     tokens: TokensStream,
-    path: NodePath,
-    fieldParsers: Map<String, TokenStreamParser<JsonNode>>
+    path: NodePath   //todo add more context to NodePath? like the field type, expected values...
 ): Outcome<JsonError, JsonNodeObject> =
     tryParse {
         val openCurly = tokens.next()
@@ -109,13 +108,13 @@ fun parseJsonNodeObject(
             val fields = mutableMapOf<String, JsonNode>()
             while (curr != "}") {
                 val fieldName = parseJsonNodeString(tokens, path).onFailure { return it.asFailure() }.text
-
-                val parser = fieldParsers.get(fieldName)
-                    ?: return parsingFailure("one of ${fieldParsers.keys}", tokens.position(), fieldName, path)
+//
+//                val parser = fieldParsers.get(fieldName)
+//                    ?: return parsingFailure("one of ${fieldParsers.keys}", tokens.position(), fieldName, path)
 
                 val colon = tokens.next()
                 if (colon != ":") return parsingFailure("':'", tokens.position(), colon, path)
-                val value = parser(tokens, Node(fieldName, path)).onFailure { return it.asFailure() }
+                val value = parseNewNode(tokens, Node(fieldName, path)).onFailure { return it.asFailure() }
                 fields.put(fieldName, value)
 
                 curr = tokens.peek()
@@ -127,7 +126,19 @@ fun parseJsonNodeObject(
 
     }
 
-fun parseNode(tokens: TokensStream, path: NodePath): JsonOutcome<JsonNode> = TODO("parseNode")
+fun parseNewNode(tokens: TokensStream, path: NodePath): JsonOutcome<JsonNode> =
+    when (val first = tokens.peek()) {
+        "null" -> parseJsonNodeNull(tokens, path)
+        "false", "true" -> parseJsonNodeBoolean(tokens, path)
+        "\"" -> parseJsonNodeString(tokens, path)
+        "[" -> parseJsonNodeArray(tokens, path)
+        "{" -> parseJsonNodeObject(tokens, path)
+        else ->
+            when (first.get(0)) { //regex -?(?:0|[1-9]\d*)(?:\.\d+)?(?:[eE][+-]?\d+)?
+                in '0'..'9', '-' -> parseJsonNodeNum(tokens, path)
+                else -> parsingFailure("a valid json value", tokens.position(), first, path)
+            }
+    }
 
 
 fun JsonNode.render(): String =
@@ -136,7 +147,7 @@ fun JsonNode.render(): String =
         is JsonNodeString -> text.putInQuotes()
         is JsonNodeBoolean -> value.toString()
         is JsonNodeNum -> num.toString()
-        is JsonNodeArray<*> -> values.map { it.render() }.joinToString(prefix = "[", postfix = "]")
+        is JsonNodeArray -> values.map { it.render() }.joinToString(prefix = "[", postfix = "]")
         is JsonNodeObject -> fieldMap.entries.map { it.key.putInQuotes() + ": " + it.value.render() }
             .joinToString(prefix = "{", postfix = "}")
     }

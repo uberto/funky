@@ -209,7 +209,7 @@ class JsonParserTest {
 
         val tokens = jsonLexer.tokenize(jsonString)
 
-        val nodes = parseJsonNodeArray(tokens, ::parseJsonNodeString, NodeRoot).expectSuccess()
+        val nodes = parseJsonNodeArray(tokens, NodeRoot).expectSuccess()
 
         expectThat(nodes.render()).isEqualTo("""["abc", "def"]""")
     }
@@ -239,8 +239,7 @@ class JsonParserTest {
 
         val nodes = parseJsonNodeObject(
             tokens,
-            NodeRoot,
-            mapOf("id" to ::parseJsonNodeNum, "name" to ::parseJsonNodeString)
+            NodeRoot
         ).expectSuccess()
 
         val expected = """{"id": 123, "name": "Ann"}"""

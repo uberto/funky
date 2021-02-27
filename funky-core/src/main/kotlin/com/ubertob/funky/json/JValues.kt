@@ -72,22 +72,22 @@ abstract class JStringRepresentable<T : Any>() : BiDiJson<T, JsonNodeString> {
 }
 
 
-data class JArray<T : Any, JN : JsonNode>(val helper: BiDiJson<T, JN>) : BiDiJson<List<T>, JsonNodeArray<JN>> {
+data class JArray<T : Any>(val helper: BiDiJson<T, *>) : BiDiJson<List<T>, JsonNodeArray> {
 
-    override fun fromJsonNode(node: JsonNodeArray<JN>): Outcome<JsonError, List<T>> =
-        mapFrom(node, helper::fromJsonNode)
+    override fun fromJsonNode(node: JsonNodeArray): Outcome<JsonError, List<T>> =
+        mapFrom(node) { jn -> helper.fromJsonNodeBase(jn) }
 
-    override fun toJsonNode(value: List<T>, path: NodePath): JsonNodeArray<JN> =
+    override fun toJsonNode(value: List<T>, path: NodePath): JsonNodeArray =
         mapToJson(value, helper::toJsonNode, path)
 
-    private fun <T : Any> mapToJson(objs: List<T>, f: (T, NodePath) -> JN, path: NodePath): JsonNodeArray<JN> =
+    private fun <T : Any> mapToJson(objs: List<T>, f: (T, NodePath) -> JsonNode, path: NodePath): JsonNodeArray =
         JsonNodeArray(objs.map { f(it, path) }, path)
 
     private fun <T : Any> mapFrom(
-        node: JsonNodeArray<JN>,
-        f: (JN) -> JsonOutcome<T>
+        node: JsonNodeArray,
+        f: (JsonNode) -> JsonOutcome<T>
     ): JsonOutcome<List<T>> = node.values.map(f).extract()
 
-    override fun parseToNode(tokensStream: TokensStream, path: NodePath): JsonOutcome<JsonNodeArray<JN>> =
-        parseJsonNodeArray(tokensStream, helper::parseToNode, path)
+    override fun parseToNode(tokensStream: TokensStream, path: NodePath): JsonOutcome<JsonNodeArray> =
+        parseJsonNodeArray(tokensStream, path)
 }

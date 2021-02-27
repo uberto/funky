@@ -13,7 +13,7 @@ data class JsonNodeBoolean(val value: Boolean, override val path: NodePath) : Js
 data class JsonNodeNum(val num: BigDecimal, override val path: NodePath) : JsonNode()
 data class JsonNodeNull(override val path: NodePath) : JsonNode()
 data class JsonNodeString(val text: String, override val path: NodePath) : JsonNode()
-data class JsonNodeArray<JN : JsonNode>(val values: List<JN>, override val path: NodePath) : JsonNode()
+data class JsonNodeArray(val values: List<JsonNode>, override val path: NodePath) : JsonNode()
 data class JsonNodeObject(val fieldMap: Map<String, JsonNode>, override val path: NodePath) : JsonNode() {
 
     operator fun <T> JsonProperty<T>.unaryPlus(): T =
