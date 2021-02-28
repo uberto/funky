@@ -95,7 +95,7 @@ interface JSealed<T : Any> : JObject<T> {
         }
 
     @Suppress("UNCHECKED_CAST")
-    fun findSubTypeBiDi(typeName: String): JObject<T>? = subtypesJObject.get(typeName) as? JObject<T>
+    fun findSubTypeBiDi(typeName: String): JObject<T>? = subtypesJObject[typeName] as? JObject<T>
 
 }
 

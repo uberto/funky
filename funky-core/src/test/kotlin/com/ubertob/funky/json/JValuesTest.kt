@@ -7,7 +7,7 @@ import strikt.api.expectThat
 import strikt.assertions.isEqualTo
 import kotlin.random.Random
 
-class JsonAdjunctionTest {
+class JValuesTest {
 
     @Test
     fun `JsonNode String`() {
@@ -290,5 +290,6 @@ class JsonAdjunctionTest {
 // serialize with stringbuilder
 // add tests for concurrency reuse
 // measure performance against other libs
+// try to remove unsafe cast or prove them safe
 // add un-typed option JObject<Any>
 // add constant fields (ignoring Json content)

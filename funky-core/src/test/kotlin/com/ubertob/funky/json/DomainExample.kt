@@ -102,7 +102,7 @@ object JCompany : JAny<Company>() {
 }
 
 object JCustomer : JSealed<Customer> {
-    val `subtypeAdjunctions `: Map<String, JObject<out Customer>> =
+    override val subtypesJObject: Map<String, JObject<out Customer>> =
         mapOf(
             "private" to JPerson,
             "company" to JCompany
