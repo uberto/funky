@@ -280,9 +280,10 @@ class BiDiJsonTest {
 }
 
 
-
 //todo
-// check with Java
+// add tests for JInstantD, JLocalDate, JCurrency, JInstance and JMap
+// improve errors + add tests for other json errors
+// add test example with Java
 // add prettyPrint/compactPrint options
 // add null/skipField option
 // add parseJson from Reader
@@ -290,4 +291,4 @@ class BiDiJsonTest {
 // add tests for concurrency reuse
 // measure performance against other libs
 // add un-typed option JObject<Any>
-// add constant fields
+// add constant fields (ignoring Json content)

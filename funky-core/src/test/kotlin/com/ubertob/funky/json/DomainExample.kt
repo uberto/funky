@@ -82,8 +82,7 @@ enum class TaxType {
 data class Invoice(
     val id: InvoiceId,
     val vat: Boolean,
-    val customer: Person,
-//    val customer: Customer,
+    val customer: Customer,
     val items: List<Product>,
     val total: BigDecimal,
     val created: LocalDate,
@@ -103,7 +102,7 @@ object JCompany : JAny<Company>() {
 }
 
 object JCustomer : JSealed<Customer> {
-    override val subtypesMap: Map<String, JObjectBase<out Customer>> =
+    override val subtypeBiDis: Map<String, JObjectBiDi<out Customer>> =
         mapOf(
             "private" to JPerson,
             "company" to JCompany
@@ -120,7 +119,7 @@ object JCustomer : JSealed<Customer> {
 object JInvoice : JAny<Invoice>() {
     val id by JField(Invoice::id, JStringWrapper(::InvoiceId))
     val vat by JField(Invoice::vat, JBoolean, jsonFieldName = "vat-to-pay")
-    val customer by JField(Invoice::customer, JPerson)
+    val customer by JField(Invoice::customer, JCustomer)
     val items by JField(Invoice::items, JArray(JProduct))
     val total by JField(Invoice::total, JBigDecimal)
     val created_date by JField(Invoice::created, JLocalDate)

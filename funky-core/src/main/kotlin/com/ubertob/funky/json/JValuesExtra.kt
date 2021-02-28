@@ -35,11 +35,13 @@ data class JEnum<E : Enum<E>>(override val cons: (String) -> E) : JStringReprese
     override val render: (E) -> String = { it.name }
 }
 
+//instant as date string
 object JInstantD : JStringRepresentable<Instant>() {
     override val cons: (String) -> Instant = Instant::parse
     override val render: (Instant) -> String = Instant::toString
 }
 
+//instant as epoch millis
 object JInstant : JNumRepresentable<Instant>() {
     override val cons: (BigDecimal) -> Instant = { Instant.ofEpochMilli(it.toLong()) }
     override val render: (Instant) -> BigDecimal = { it.toEpochMilli().toBigDecimal() }
@@ -56,10 +58,15 @@ data class JInstance<T : Any>(val singleton: T) : JAny<T>() {
 }
 
 
-interface JSealed<T : Any> : JObjectBase<T> {
+interface JSealed<T : Any> : JObjectBiDi<T> {
 
     val typeFieldName: String
         get() = "_type"
+
+
+    fun extractTypeName(obj: T): String
+
+    val subtypeBiDis: Map<String, JObjectBiDi<out T>>
 
     fun typeWriter(jno: JsonNodeObject, obj: T): JsonNodeObject =
         jno.copy(
@@ -69,28 +76,30 @@ interface JSealed<T : Any> : JObjectBase<T> {
             ))
         )
 
-    fun extractTypeName(obj: T): String
-
-    val subtypesMap: Map<String, JObjectBase<out T>>
-
     override fun JsonNodeObject.deserializeOrThrow(): T? {
-        val typeName: JsonNodeString =
-            fieldMap[typeFieldName] as? JsonNodeString ?: error("expected field $typeFieldName not found!")
-        val bidiJson = subtypesMap[typeName.text] ?: error("subtype not known $typeName")
+        val typeName = JString.fromJsonNodeBase(
+            fieldMap[typeFieldName]
+                ?: error("expected field $typeFieldName not found!")
+        ).orThrow()
+        val bidiJson = subtypeBiDis[typeName] ?: error("subtype not known $typeName")
         return bidiJson.fromJsonNode(this).orThrow()
     }
 
 
+    override fun getWriters(value: T): Set<NodeWriter<T>> =
+        extractTypeName(value).let { typeName ->
+            findSubTypeBiDi(typeName)
+                ?.getWriters(value)
+                ?.plus(::typeWriter)
+                ?: error("subtype not known $typeName")
+        }
+
     @Suppress("UNCHECKED_CAST")
-    override fun getWriters(value: T): Sequence<NodeWriter<T>> = sequence {
-        val typeName = extractTypeName(value)
-        yield(::typeWriter)
-        yieldAll(subtypesMap[typeName]?.let { (it as JObjectBase<T>).getWriters(value) }
-            ?: error("subtype not known $typeName"))
-    }
+    fun findSubTypeBiDi(typeName: String): JObjectBiDi<T>? = subtypeBiDis.get(typeName) as? JObjectBiDi<T>
+
 }
 
-class JMap<T : Any>(private val valueConverter: JObjectBase<T>) : JObjectBase<Map<String, T>> {
+class JMap<T : Any>(private val valueConverter: JObjectBiDi<T>) : JObjectBiDi<Map<String, T>> {
     override fun JsonNodeObject.deserializeOrThrow(): Map<String, T>? {
         TODO("Not yet implemented")
     }
@@ -100,7 +109,7 @@ class JMap<T : Any>(private val valueConverter: JObjectBase<T>) : JObjectBase<Ma
         TODO("Not yet implemented")
     }
 
-    override fun getWriters(value: Map<String, T>): Sequence<NodeWriter<Map<String, T>>> {
+    override fun getWriters(value: Map<String, T>): Set<NodeWriter<Map<String, T>>> {
         TODO("Not yet implemented")
     }
 //    override fun extract(wrapped: JsonNodeObject): JsonOutcome<Map<String, T>> =

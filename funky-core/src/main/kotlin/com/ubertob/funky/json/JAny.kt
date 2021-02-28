@@ -10,7 +10,7 @@ import kotlin.reflect.KProperty
 
 typealias NodeWriter<T> = (JsonNodeObject, T) -> JsonNodeObject
 
-interface JObjectBase<T : Any> : BiDiJson<T, JsonNodeObject> {
+interface JObjectBiDi<T : Any> : BiDiJson<T, JsonNodeObject> {
 
     fun JsonNodeObject.deserializeOrThrow(): T?
 
@@ -21,7 +21,7 @@ interface JObjectBase<T : Any> : BiDiJson<T, JsonNodeObject> {
             )
         }
 
-    fun getWriters(value: T): Sequence<NodeWriter<T>>
+    fun getWriters(value: T): Set<NodeWriter<T>>
 
     override fun toJsonNode(value: T, path: NodePath): JsonNodeObject =
         getWriters(value)
@@ -35,14 +35,14 @@ interface JObjectBase<T : Any> : BiDiJson<T, JsonNodeObject> {
 }
 
 
-abstract class JAny<T : Any> : JObjectBase<T> {
+abstract class JAny<T : Any> : JObjectBiDi<T> {
 
     private val nodeWriters: AtomicReference<Set<NodeWriter<T>>> = AtomicReference(emptySet())
 
     override fun parseToNode(tokensStream: TokensStream, path: NodePath): Outcome<JsonError, JsonNodeObject> =
         parseJsonNodeObject(tokensStream, path)
 
-    override fun getWriters(value: T): Sequence<NodeWriter<T>> = nodeWriters.get().asSequence()
+    override fun getWriters(value: T): Set<NodeWriter<T>> = nodeWriters.get()
 
     private fun registerSetter(nodeWriter: NodeWriter<T>) {
         nodeWriters.getAndUpdate { set -> set + nodeWriter }

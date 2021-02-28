@@ -17,6 +17,21 @@ typealias JsonOutcome<T> = Outcome<JsonError, T>
 
 val defaultLexer = JsonLexer()
 
+
+/*
+a couple parser/printer form an adjunction
+
+The laws are (no id because we cannot reconstruct a wrong json from the error):
+
+render `.` parse `.` render = render
+parse `.` render `.` parse = parse
+
+where:
+f `.` g: (x) -> g(f(x))
+render : JsonOutcome<T> -> JSON
+parse : JSON -> JsonOutcome<T>
+ */
+
 interface BiDiJson<T, JN : JsonNode> {
 
     @Suppress("UNCHECKED_CAST")
