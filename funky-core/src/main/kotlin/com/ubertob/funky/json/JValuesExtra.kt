@@ -58,7 +58,7 @@ data class JInstance<T : Any>(val singleton: T) : JAny<T>() {
 }
 
 
-interface JSealed<T : Any> : JObjectBiDi<T> {
+interface JSealed<T : Any> : JObject<T> {
 
     val typeFieldName: String
         get() = "_type"
@@ -66,7 +66,7 @@ interface JSealed<T : Any> : JObjectBiDi<T> {
 
     fun extractTypeName(obj: T): String
 
-    val subtypeBiDis: Map<String, JObjectBiDi<out T>>
+    val subtypesJObject: Map<String, JObject<out T>>
 
     fun typeWriter(jno: JsonNodeObject, obj: T): JsonNodeObject =
         jno.copy(
@@ -81,7 +81,7 @@ interface JSealed<T : Any> : JObjectBiDi<T> {
             fieldMap[typeFieldName]
                 ?: error("expected field $typeFieldName not found!")
         ).orThrow()
-        val bidiJson = subtypeBiDis[typeName] ?: error("subtype not known $typeName")
+        val bidiJson = subtypesJObject[typeName] ?: error("subtype not known $typeName")
         return bidiJson.fromJsonNode(this).orThrow()
     }
 
@@ -95,11 +95,11 @@ interface JSealed<T : Any> : JObjectBiDi<T> {
         }
 
     @Suppress("UNCHECKED_CAST")
-    fun findSubTypeBiDi(typeName: String): JObjectBiDi<T>? = subtypeBiDis.get(typeName) as? JObjectBiDi<T>
+    fun findSubTypeBiDi(typeName: String): JObject<T>? = subtypesJObject.get(typeName) as? JObject<T>
 
 }
 
-class JMap<T : Any>(private val valueConverter: JObjectBiDi<T>) : JObjectBiDi<Map<String, T>> {
+class JMap<T : Any>(private val valueConverter: JObject<T>) : JObject<Map<String, T>> {
     override fun JsonNodeObject.deserializeOrThrow(): Map<String, T>? {
         TODO("Not yet implemented")
     }

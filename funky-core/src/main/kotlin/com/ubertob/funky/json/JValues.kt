@@ -6,7 +6,7 @@ import com.ubertob.funky.outcome.extract
 import java.math.BigDecimal
 
 
-object JBoolean : BiDiJson<Boolean, JsonNodeBoolean> {
+object JBoolean : JsonAdjunction<Boolean, JsonNodeBoolean> {
 
     override fun fromJsonNode(node: JsonNodeBoolean): JsonOutcome<Boolean> = node.value.asSuccess()
     override fun toJsonNode(value: Boolean, path: NodePath): JsonNodeBoolean = JsonNodeBoolean(value, path)
@@ -15,7 +15,7 @@ object JBoolean : BiDiJson<Boolean, JsonNodeBoolean> {
 
 }
 
-object JString : BiDiJson<String, JsonNodeString> {
+object JString : JsonAdjunction<String, JsonNodeString> {
 
     override fun fromJsonNode(node: JsonNodeString): JsonOutcome<String> = node.text.asSuccess()
     override fun toJsonNode(value: String, path: NodePath): JsonNodeString = JsonNodeString(value, path)
@@ -51,7 +51,7 @@ fun <T : Any> tryFromNode(node: JsonNode, f: () -> T): JsonOutcome<T> =
         }
     }
 
-abstract class JNumRepresentable<T : Any>() : BiDiJson<T, JsonNodeNum> {
+abstract class JNumRepresentable<T : Any>() : JsonAdjunction<T, JsonNodeNum> {
     abstract val cons: (BigDecimal) -> T
     abstract val render: (T) -> BigDecimal
 
@@ -61,7 +61,7 @@ abstract class JNumRepresentable<T : Any>() : BiDiJson<T, JsonNodeNum> {
         parseJsonNodeNum(tokensStream, path)
 }
 
-abstract class JStringRepresentable<T : Any>() : BiDiJson<T, JsonNodeString> {
+abstract class JStringRepresentable<T : Any>() : JsonAdjunction<T, JsonNodeString> {
     abstract val cons: (String) -> T
     abstract val render: (T) -> String
 
@@ -72,7 +72,7 @@ abstract class JStringRepresentable<T : Any>() : BiDiJson<T, JsonNodeString> {
 }
 
 
-data class JArray<T : Any>(val helper: BiDiJson<T, *>) : BiDiJson<List<T>, JsonNodeArray> {
+data class JArray<T : Any>(val helper: JsonAdjunction<T, *>) : JsonAdjunction<List<T>, JsonNodeArray> {
 
     override fun fromJsonNode(node: JsonNodeArray): Outcome<JsonError, List<T>> =
         mapFrom(node) { jn -> helper.fromJsonNodeBase(jn) }

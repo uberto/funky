@@ -7,7 +7,7 @@ import strikt.api.expectThat
 import strikt.assertions.isEqualTo
 import kotlin.random.Random
 
-class BiDiJsonTest {
+class JsonAdjunctionTest {
 
     @Test
     fun `JsonNode String`() {

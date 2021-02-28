@@ -30,9 +30,11 @@ where:
 f `.` g: (x) -> g(f(x))
 render : JsonOutcome<T> -> JSON
 parse : JSON -> JsonOutcome<T>
+
+JSON here can be either the Json string or the JsonNode
  */
 
-interface BiDiJson<T, JN : JsonNode> {
+interface JsonAdjunction<T, JN : JsonNode> {
 
     @Suppress("UNCHECKED_CAST")
     fun fromJsonNodeBase(node: JsonNode): JsonOutcome<T> =

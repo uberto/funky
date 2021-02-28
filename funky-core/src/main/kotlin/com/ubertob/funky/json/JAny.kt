@@ -10,7 +10,7 @@ import kotlin.reflect.KProperty
 
 typealias NodeWriter<T> = (JsonNodeObject, T) -> JsonNodeObject
 
-interface JObjectBiDi<T : Any> : BiDiJson<T, JsonNodeObject> {
+interface JObject<T : Any> : JsonAdjunction<T, JsonNodeObject> {
 
     fun JsonNodeObject.deserializeOrThrow(): T?
 
@@ -35,7 +35,7 @@ interface JObjectBiDi<T : Any> : BiDiJson<T, JsonNodeObject> {
 }
 
 
-abstract class JAny<T : Any> : JObjectBiDi<T> {
+abstract class JAny<T : Any> : JObject<T> {
 
     private val nodeWriters: AtomicReference<Set<NodeWriter<T>>> = AtomicReference(emptySet())
 
@@ -65,7 +65,7 @@ sealed class JsonProperty<T> {
 data class JsonParsingException(val error: JsonError) : RuntimeException()
 
 
-data class JsonPropMandatory<T : Any, JN : JsonNode>(override val propName: String, val jf: BiDiJson<T, JN>) :
+data class JsonPropMandatory<T : Any, JN : JsonNode>(override val propName: String, val jf: JsonAdjunction<T, JN>) :
     JsonProperty<T>() {
 
     @Suppress("UNCHECKED_CAST")
@@ -87,7 +87,7 @@ data class JsonPropMandatory<T : Any, JN : JsonNode>(override val propName: Stri
 }
 
 
-data class JsonPropOptional<T : Any, JN : JsonNode>(override val propName: String, val jf: BiDiJson<T, JN>) :
+data class JsonPropOptional<T : Any, JN : JsonNode>(override val propName: String, val jf: JsonAdjunction<T, JN>) :
     JsonProperty<T?>() {
 
     @Suppress("UNCHECKED_CAST")
@@ -137,23 +137,23 @@ sealed class JFieldBase<T, PT : Any>
 
 class JField<T : Any, PT : Any>(
     override val binder: (PT) -> T,
-    private val biDiJson: BiDiJson<T, *>,
+    private val jsonAdjunction: JsonAdjunction<T, *>,
     private val jsonFieldName: String? = null
 ) : JFieldBase<T, PT>() {
 
     override fun buildJsonProperty(property: KProperty<*>): JsonProperty<T> =
-        JsonPropMandatory(jsonFieldName ?: property.name, biDiJson)
+        JsonPropMandatory(jsonFieldName ?: property.name, jsonAdjunction)
 
 }
 
 class JFieldMaybe<T : Any, PT : Any>(
     override val binder: (PT) -> T?,
-    private val biDiJson: BiDiJson<T, *>,
+    private val jsonAdjunction: JsonAdjunction<T, *>,
     private val jsonFieldName: String? = null
 ) : JFieldBase<T?, PT>() {
 
     override fun buildJsonProperty(property: KProperty<*>): JsonProperty<T?> =
-        JsonPropOptional(jsonFieldName ?: property.name, biDiJson)
+        JsonPropOptional(jsonFieldName ?: property.name, jsonAdjunction)
 
 }
 
