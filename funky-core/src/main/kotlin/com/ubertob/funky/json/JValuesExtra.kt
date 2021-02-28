@@ -10,7 +10,6 @@ interface StringWrapper {
     val raw: String
 }
 
-
 data class JStringWrapper<T : StringWrapper>(override val cons: (String) -> T) : JStringRepresentable<T>() {
     override val render: (T) -> String = { it.raw }
 }
@@ -99,28 +98,21 @@ interface JSealed<T : Any> : JObject<T> {
 
 }
 
-class JMap<T : Any>(private val valueConverter: JObject<T>) : JObject<Map<String, T>> {
-    override fun JsonNodeObject.deserializeOrThrow(): Map<String, T>? {
-        TODO("Not yet implemented")
-    }
+class JMap<T : Any>(private val valueConverter: JsonAdjunction<T, *>) : JObject<Map<String, T>> {
+    override fun JsonNodeObject.deserializeOrThrow() =
+        fieldMap.mapValues { entry ->
+            valueConverter.fromJsonNodeBase(entry.value).orThrow()
+        }
 
+    override fun getWriters(value: Map<String, T>): Set<NodeWriter<Map<String, T>>> =
+        value.entries.map { (key, value) ->
+            { jno: JsonNodeObject, map: Map<String, T> ->
+                jno.copy(
+                    fieldMap = jno.fieldMap +
+                            (key to valueConverter.toJsonNode(value, Node(key, jno.path)))
+                )
+            }
+        }.toSet()
 
-    override fun parseToNode(tokensStream: TokensStream, path: NodePath): JsonOutcome<JsonNodeObject> {
-        TODO("Not yet implemented")
-    }
-
-    override fun getWriters(value: Map<String, T>): Set<NodeWriter<Map<String, T>>> {
-        TODO("Not yet implemented")
-    }
-//    override fun extract(wrapped: JsonNodeObject): JsonOutcome<Map<String, T>> =
-//        wrapped.asObject {
-//            fieldMap.mapValues { entry ->
-//                valueConverter.extract(entry.value)
-//                    .onFailure { return@asObject it }
-//            }.asSuccess()
-//        }
-//
-//    override fun build(value: Map<String, T>): JsonNodeObject =
-//        JsonNodeObject(value.mapValues { valueConverter.build(it.value) })
 }
 

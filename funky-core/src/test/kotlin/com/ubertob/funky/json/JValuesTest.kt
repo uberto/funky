@@ -281,7 +281,7 @@ class JValuesTest {
 
 
 //todo
-// add tests for JInstantD, JLocalDate, JCurrency, JInstance and JMap
+// add tests for JInstantD, JInstance
 // improve errors + add tests for other json errors
 // add test example with Java
 // add prettyPrint/compactPrint options

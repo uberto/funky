@@ -2,16 +2,18 @@ package com.ubertob.funky.json
 
 import com.ubertob.funky.*
 import java.math.BigDecimal
+import java.math.BigInteger
 import java.time.Instant
 import java.time.LocalDate
 import java.time.temporal.ChronoUnit.SECONDS
+import java.util.*
 import kotlin.random.Random
 
 
 val toothpaste = Product(1001, "paste", "toothpaste \"whiter than white\"", 12.34)
 val offer = Product(10001, "special offer", "offer for custom fidality", null)
 
-fun randomPerson() = Person(Random.nextInt(1, 1000), randomString(text, 1, 10))
+fun randomPerson() = Person(Random.nextInt(1, 1000), randomString(lowercase, 1, 10).capitalize())
 fun randomCompany() = Company(randomString(lowercase, 5, 10), TaxType.values().random())
 
 fun randomCustomer(): Customer = when (Random.nextBoolean()) {
@@ -33,6 +35,14 @@ fun randomInvoice() = Invoice(
     total = BigDecimal(randomPrice(10, 1000)),
     created = LocalDate.now(),
     paid = randomNullable { Instant.now().truncatedTo(SECONDS) }
+)
+
+fun randomCurrency() = Currency.getAvailableCurrencies().random()
+fun randomMoney() = Money(randomCurrency(), randomPrice(100, 10000).toBigDecimal().toBigInteger())
+
+fun randomExpenseReport() = ExpenseReport(
+    randomPerson(),
+    randomList(0, 10) { "expense_${it}" to randomMoney() }.toMap()
 )
 
 sealed class Customer()
@@ -137,4 +147,32 @@ object JInvoice : JAny<Invoice>() {
             paid = +paid_datetime
         )
 
+}
+
+
+data class Money(val currency: Currency, val amount: BigInteger)
+
+object JMoney : JAny<Money>() {
+
+    val ccy by JField(Money::currency, JCurrency)
+    val amount by JField(Money::amount, JBigInteger)
+    override fun JsonNodeObject.deserializeOrThrow() =
+        Money(
+            currency = +ccy,
+            amount = +amount
+        )
+}
+
+data class ExpenseReport(val person: Person, val expenses: Map<String, Money>)
+
+object JExpenseReport : JAny<ExpenseReport>() {
+
+    val person by JField(ExpenseReport::person, JPerson)
+    val expenses by JField(ExpenseReport::expenses, JMap(JMoney))
+
+    override fun JsonNodeObject.deserializeOrThrow() =
+        ExpenseReport(
+            person = +person,
+            expenses = +expenses
+        )
 }

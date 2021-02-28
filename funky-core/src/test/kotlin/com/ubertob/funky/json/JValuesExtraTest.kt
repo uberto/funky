@@ -43,6 +43,26 @@ class JValuesExtraTest {
         }
     }
 
+    @Test
+    fun `Json ExpenseReport`() {
+
+        repeat(10) {
+
+            val value = randomExpenseReport()
+            val json = JExpenseReport.toJsonNode(value, NodeRoot)
+
+            val actual = JExpenseReport.fromJsonNode(json).expectSuccess()
+
+            expectThat(actual).isEqualTo(value)
+
+            val jsonStr = JExpenseReport.toJson(value)
+
+//            println(jsonStr)
+
+            expectThat(JExpenseReport.fromJson(jsonStr).expectSuccess()).isEqualTo(value)
+        }
+    }
+
 
 }
 
