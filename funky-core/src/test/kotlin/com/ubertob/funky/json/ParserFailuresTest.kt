@@ -54,7 +54,6 @@ class ParserFailuresTest {
   "id": "1001",
   "vat-to-pay": true,
   "customer": {
-    "_type": "private",
     "id": 1,
     "name": "ann"
   },
