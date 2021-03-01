@@ -63,6 +63,26 @@ class JValuesExtraTest {
         }
     }
 
+    @Test
+    fun `Json Notes`() {
+
+        repeat(10) {
+
+            val value = randomNotes()
+            val json = JNotes.toJsonNode(value, NodeRoot)
+
+            val actual = JNotes.fromJsonNode(json).expectSuccess()
+
+            expectThat(actual).isEqualTo(value)
+
+            val jsonStr = JNotes.toJson(value)
+
+//            println(jsonStr)
+
+            expectThat(JNotes.fromJson(jsonStr).expectSuccess()).isEqualTo(value)
+        }
+    }
+
 
 }
 

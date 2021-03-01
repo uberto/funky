@@ -45,6 +45,11 @@ fun randomExpenseReport() = ExpenseReport(
     randomList(0, 10) { "expense_${it}" to randomMoney() }.toMap()
 )
 
+fun randomNotes() = Notes(
+    updated = Instant.now().minusSeconds(Random.nextLong(100000)),
+    thingsToDo = randomList(0, 10) { randomString(uppercase, 3, 3) to randomString(lowercase, 1, 20) }.toMap()
+)
+
 sealed class Customer()
 data class Person(val id: Int, val name: String) : Customer()
 data class Company(val name: String, val taxType: TaxType) : Customer()
@@ -174,5 +179,18 @@ object JExpenseReport : JAny<ExpenseReport>() {
         ExpenseReport(
             person = +person,
             expenses = +expenses
+        )
+}
+
+data class Notes(val updated: Instant, val thingsToDo: Map<String, String>)
+
+object JNotes : JAny<Notes>() {
+    val updated by JField(Notes::updated, JInstantD)
+    val things_to_do by JField(Notes::thingsToDo, JMap(JString))
+
+    override fun JsonNodeObject.deserializeOrThrow() =
+        Notes(
+            updated = +updated,
+            thingsToDo = +things_to_do
         )
 }

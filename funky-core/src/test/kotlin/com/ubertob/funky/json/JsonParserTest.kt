@@ -105,7 +105,7 @@ class JsonParserTest {
 
             val jsonString = JsonNodeNum(value, NodeRoot).render()
 
-            println("$value -> $jsonString")
+//            println("$value -> $jsonString")
 
             val tokens = jsonLexer.tokenize(jsonString)
 
@@ -120,7 +120,7 @@ class JsonParserTest {
 
             val jsonString = JsonNodeNum(value, NodeRoot).render()
 
-            println("$value -> $jsonString")
+//            println("$value -> $jsonString")
 
             val tokens = jsonLexer.tokenize(jsonString)
 
