@@ -47,7 +47,7 @@ fun <T : Any> tryFromNode(node: JsonNode, f: () -> T): JsonOutcome<T> =
     }.transformFailure { throwableError ->
         when (throwableError.t) {
             is JsonParsingException -> throwableError.t.error // keep path info
-            else -> JsonError(node, throwableError.msg)
+            else -> JsonError(node.path, throwableError.msg)
         }
     }
 

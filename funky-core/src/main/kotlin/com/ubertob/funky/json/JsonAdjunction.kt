@@ -5,9 +5,8 @@ import JsonLexer
 import com.ubertob.funky.outcome.*
 
 
-data class JsonError(val node: JsonNode?, val reason: String) : OutcomeError {
-    val location = node?.path?.getPath()?.let { "<$it>" } ?: "parsing"
-    override val msg = "error at $location: $reason"
+data class JsonError(val path: NodePath, val reason: String) : OutcomeError {
+    override val msg = "error on <${path.getPath()}> $reason"
 }
 
 typealias JsonOutcome<T> = Outcome<JsonError, T>
@@ -32,7 +31,7 @@ interface JsonAdjunction<T, JN : JsonNode> {
 
     @Suppress("UNCHECKED_CAST")
     fun fromJsonNodeBase(node: JsonNode): JsonOutcome<T> =
-        (node as? JN)?.let { fromJsonNode(it) } ?: JsonError(node, "Wrong JsonNode type!").asFailure()
+        (node as? JN)?.let { fromJsonNode(it) } ?: JsonError(node.path, "Wrong JsonNode type!").asFailure()
 
     fun fromJsonNode(node: JN): JsonOutcome<T>
     fun toJsonNode(value: T, path: NodePath): JN

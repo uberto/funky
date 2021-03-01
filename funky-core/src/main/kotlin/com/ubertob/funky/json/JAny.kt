@@ -17,7 +17,7 @@ interface JObject<T : Any> : JsonAdjunction<T, JsonNodeObject> {
     override fun fromJsonNode(node: JsonNodeObject): JsonOutcome<T> =
         tryFromNode(node) {
             node.deserializeOrThrow() ?: throw JsonParsingException(
-                JsonError(node, "tryDeserialize returned null!")
+                JsonError(node.path, "tryDeserialize returned null!")
             )
         }
 
@@ -74,7 +74,7 @@ data class JsonPropMandatory<T : Any, JN : JsonNode>(override val propName: Stri
             ?.let { idn ->
                 jf.fromJsonNode(idn as JN)
             }
-            ?: JsonError(wrapped, "Not found $propName").asFailure()
+            ?: JsonError(wrapped.path, "Not found $propName").asFailure()
 
     override fun setter(value: T): (JsonNodeObject) -> JsonNodeObject =
         { wrapped ->

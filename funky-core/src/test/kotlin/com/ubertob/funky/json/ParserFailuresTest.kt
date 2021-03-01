@@ -13,7 +13,7 @@ class ParserFailuresTest {
 
         val error = JInt.fromJson(illegalJson).expectFailure()
 
-        expectThat(error.msg).isEqualTo("error at parsing: Expected EOF at position 5 but found 'b' while parsing <[root]>")
+        expectThat(error.msg).isEqualTo("error on <[root]> at position 5: expected EOF but found 'b'")
     }
 
     @Test
@@ -22,7 +22,7 @@ class ParserFailuresTest {
 
         val error = JBoolean.fromJson(illegalJson).expectFailure()
 
-        expectThat(error.msg).isEqualTo("error at parsing: Expected a Boolean at position 1 but found 'False' while parsing <[root]>")
+        expectThat(error.msg).isEqualTo("error on <[root]> at position 5: expected a Boolean but found 'False'")
     }
 
     @Test
@@ -33,7 +33,7 @@ class ParserFailuresTest {
 
         val error = JString.fromJson(illegalJson).expectFailure()
 
-        expectThat(error.msg).isEqualTo("error at parsing: Expected a String at position 0 but found '' while parsing <[root]>")
+        expectThat(error.msg).isEqualTo("error on <[root]> at position 0: expected a String but found 'EOF'")
     }
 
     @Test
@@ -42,18 +42,9 @@ class ParserFailuresTest {
 
         val error = JLong.fromJson(illegalJson).expectFailure()
 
-        expectThat(error.msg).isEqualTo("error at parsing: Expected a Number at position 0 but found 'Character - is neither a decimal digit number, decimal point, nor \"e\" notation exponential mark.' while parsing <[root]>")
+        expectThat(error.msg).isEqualTo("error on <[root]> at position 0: expected a Number but found 'Character - is neither a decimal digit number, decimal point, nor \"e\" notation exponential mark.'")
     }
 
-    @Test
-    fun `parsing illegal json gives us precise errors`() {
-        val illegalJson =
-            "{\"id\":1001,\"vat-to-pay\":true,\"customer\":{\"id\":1,\"name\":\"ann\"},\"items\":[{\"id\":1001,\"desc\":\"toothpaste \\\"whiter than white\\\"\",\"price:12.34},{\"id\":10001,\"desc\":\"special offer\"}],\"total\":123.45}"
-
-        val error = JInvoice.fromJson(illegalJson).expectFailure()
-
-        expectThat(error.msg).isEqualTo("error at parsing: Expected '\"' at position 7 but found '1001' while parsing <[root]/id>")
-    }
 
     @Test
     fun `parsing json without a field return precise errors`() {
@@ -63,6 +54,7 @@ class ParserFailuresTest {
   "id": "1001",
   "vat-to-pay": true,
   "customer": {
+    "_type": "private",
     "id": 1,
     "name": "ann"
   },
@@ -79,11 +71,11 @@ class ParserFailuresTest {
     }
   ],
   "total": 123.45
-}  """.trimIndent()
+}  """
 
         val error = JInvoice.fromJson(jsonWithDifferentField).expectFailure()
 
-        expectThat(error.msg).isEqualTo("error at <[root]/items/1>: Not found long_description")
+        expectThat(error.msg).isEqualTo("error on </customer> expected field _type not found!")
     }
 
 
@@ -95,6 +87,7 @@ class ParserFailuresTest {
   "id": "1001",
   "vat-to-pay": true,
   "customer": {
+    "_type": "private",
     "id": 1,
     "name": "ann"
   },
@@ -110,7 +103,7 @@ class ParserFailuresTest {
       "short_desc": "special offer"
     }
   ],
-  "total": 123.45
+  "total": "123.45"
 }  """.trimIndent()
 
         val error = JInvoice.fromJson(jsonWithDifferentField).expectFailure()

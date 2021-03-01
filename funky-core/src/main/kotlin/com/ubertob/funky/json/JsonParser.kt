@@ -18,8 +18,7 @@ data class TokensStream(private val tracer: () -> Int, private val iterator: Pee
 }
 
 fun parsingError(expected: String, actual: String, position: Int, path: NodePath) = JsonError(
-    null,
-    "Expected $expected at position $position but found '$actual' while parsing <${path.getPath()}>"
+    path, "at position $position: expected $expected but found '$actual'"
 )
 
 fun parsingFailure(expected: String, actual: String, position: Int, path: NodePath) =

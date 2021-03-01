@@ -20,7 +20,4 @@ data class JsonNodeObject(val fieldMap: Map<String, JsonNode>, override val path
         getter(this@JsonNodeObject)
             .onFailure { throw JsonParsingException(it) }
 
-    companion object {
-        fun parseToNode(tokensStream: TokensStream, path: NodePath): JsonNodeObject = TODO()
-    }
 }
