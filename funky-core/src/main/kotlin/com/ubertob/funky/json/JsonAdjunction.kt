@@ -2,10 +2,7 @@ package com.ubertob.funky.json
 
 
 import JsonLexer
-import com.ubertob.funky.outcome.Outcome
-import com.ubertob.funky.outcome.OutcomeError
-import com.ubertob.funky.outcome.asFailure
-import com.ubertob.funky.outcome.bind
+import com.ubertob.funky.outcome.*
 
 
 data class JsonError(val node: JsonNode?, val reason: String) : OutcomeError {
@@ -14,9 +11,6 @@ data class JsonError(val node: JsonNode?, val reason: String) : OutcomeError {
 }
 
 typealias JsonOutcome<T> = Outcome<JsonError, T>
-
-val defaultLexer = JsonLexer()
-
 
 /*
 a couple parser/printer form an adjunction
@@ -46,9 +40,17 @@ interface JsonAdjunction<T, JN : JsonNode> {
     fun parseToNode(tokensStream: TokensStream, path: NodePath): JsonOutcome<JN>
 
     fun toJson(value: T): String = toJsonNode(value, NodeRoot).render()
-    fun fromJson(jsonString: String, lexer: JsonLexer = defaultLexer): JsonOutcome<T> =
-        parseToNode(lexer.tokenize(jsonString), NodeRoot)
+    fun fromJson(jsonString: String): JsonOutcome<T> {
+        val tokensStream = JsonLexer(jsonString).tokenize()
+        return parseToNode(tokensStream, NodeRoot)
             .bind { fromJsonNode(it) }
+            .bind {
+                if (tokensStream.hasNext())
+                    parsingFailure("EOF", tokensStream.next(), tokensStream.position(), NodeRoot)
+                else
+                    it.asSuccess()
+            }
+    }
 }
 
 

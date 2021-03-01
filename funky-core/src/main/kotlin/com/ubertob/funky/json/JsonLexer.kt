@@ -1,32 +1,36 @@
 import LexerState.*
 import com.ubertob.funky.json.TokensStream
 import com.ubertob.funky.json.peekingIterator
+import java.util.concurrent.atomic.AtomicInteger
 
 enum class LexerState {
-    OutString, InString, Escaping //todo Unicode?
+    OutString, InString, Escaping
 }
 
-class JsonLexer {
+class JsonLexer(val jsonStr: CharSequence) {
 
-    fun tokenize(jsonStr: String): TokensStream =
+    private val pos = AtomicInteger(0)
+
+    fun tokenize(): TokensStream =
         sequence {
-            val currWord = StringBuilder()
+            val currToken = StringBuilder()  //replace with index and substring for perf
             var state = OutString
             jsonStr.forEach { char ->
+                pos.incrementAndGet()
                 when (state) {
                     OutString ->
                         when (char) {
-                            ' ', '\t', '\n', '\r', '\b' -> yieldIfNotEmpty(currWord)
+                            ' ', '\t', '\n', '\r', '\b' -> yieldIfNotEmpty(currToken)
                             '{', '}', '[', ']', ',', ':' -> {
-                                yieldIfNotEmpty(currWord)
+                                yieldIfNotEmpty(currToken)
                                 yield(char.toString())
                             }
                             '"' -> {
-                                yieldIfNotEmpty(currWord)
+                                yieldIfNotEmpty(currToken)
                                 yield(char.toString())
                                 state = InString
                             }
-                            else -> currWord.append(char)
+                            else -> currToken.append(char)
                         }
 
                     InString -> when (char) {
@@ -34,26 +38,26 @@ class JsonLexer {
                             state = Escaping
                         }
                         '"' -> {
-                            yieldIfNotEmpty(currWord)
+                            yieldIfNotEmpty(currToken)
                             yield(char.toString())
                             state = OutString
                         }
-                        else -> currWord += char
+                        else -> currToken += char
                     }
                     Escaping -> when (char) {
-                        '\\' -> currWord += '\\'
-                        'n' -> currWord += '\n'
-                        'f' -> currWord += '\t'
-                        't' -> currWord += '\t'
-                        'r' -> currWord += '\r'
-                        'b' -> currWord += '\b'
-                        '"' -> currWord += '\"'
+                        '\\' -> currToken += '\\'
+                        'n' -> currToken += '\n'
+                        'f' -> currToken += '\t'
+                        't' -> currToken += '\t'
+                        'r' -> currToken += '\r'
+                        'b' -> currToken += '\b'
+                        '"' -> currToken += '\"'
                         else -> error("Wrong escape char $char")
                     }.also { state = InString }
                 }
             }
-            yieldIfNotEmpty(currWord)
-        }.peekingIterator()
+            yieldIfNotEmpty(currToken)
+        }.peekingIterator().let { TokensStream(pos::get, it) }
 
     private suspend fun SequenceScope<String>.yieldIfNotEmpty(currWord: StringBuilder) {
         if (currWord.isNotEmpty()) {

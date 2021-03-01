@@ -13,8 +13,6 @@ import kotlin.random.Random
 
 class JsonParserTest {
 
-    val jsonLexer = JsonLexer()
-
 
     @Test
     fun `render Boolean`() {
@@ -34,7 +32,7 @@ class JsonParserTest {
 
             val jsonString = JsonNodeBoolean(value, NodeRoot).render()
 
-            val tokens = jsonLexer.tokenize(jsonString)
+            val tokens = JsonLexer(jsonString).tokenize()
 
             val node = parseJsonNodeBoolean(tokens, NodeRoot).expectSuccess()
 
@@ -79,7 +77,7 @@ class JsonParserTest {
 
             val jsonString = JsonNodeNum(value, NodeRoot).render()
 
-            val tokens = jsonLexer.tokenize(jsonString)
+            val tokens = JsonLexer(jsonString).tokenize()
 
             val node = parseJsonNodeNum(tokens, NodeRoot).expectSuccess()
 
@@ -92,7 +90,7 @@ class JsonParserTest {
 
             val jsonString = JsonNodeNum(value, NodeRoot).render()
 
-            val tokens = jsonLexer.tokenize(jsonString)
+            val tokens = JsonLexer(jsonString).tokenize()
 
             val node = parseJsonNodeNum(tokens, NodeRoot).expectSuccess()
 
@@ -107,7 +105,7 @@ class JsonParserTest {
 
 //            println("$value -> $jsonString")
 
-            val tokens = jsonLexer.tokenize(jsonString)
+            val tokens = JsonLexer(jsonString).tokenize()
 
             val node = parseJsonNodeNum(tokens, NodeRoot).expectSuccess()
 
@@ -122,7 +120,7 @@ class JsonParserTest {
 
 //            println("$value -> $jsonString")
 
-            val tokens = jsonLexer.tokenize(jsonString)
+            val tokens = JsonLexer(jsonString).tokenize()
 
             val node = parseJsonNodeNum(tokens, NodeRoot).expectSuccess()
 
@@ -148,7 +146,7 @@ class JsonParserTest {
 
             val jsonString = JsonNodeString(value, NodeRoot).render()
 
-            val tokens = jsonLexer.tokenize(jsonString)
+            val tokens = JsonLexer(jsonString).tokenize()
 
             val node = parseJsonNodeString(tokens, NodeRoot).expectSuccess()
 
@@ -166,7 +164,7 @@ class JsonParserTest {
 
 //            println("$value -> $jsonString")
 
-            val tokens = jsonLexer.tokenize(jsonString)
+            val tokens = JsonLexer(jsonString).tokenize()
 
             val node = parseJsonNodeString(tokens, NodeRoot).expectSuccess()
 
@@ -186,7 +184,7 @@ class JsonParserTest {
 
         val jsonString = JsonNodeNull(NodeRoot).render()
 
-        val tokens = jsonLexer.tokenize(jsonString)
+        val tokens = JsonLexer(jsonString).tokenize()
 
         parseJsonNodeNull(tokens, NodeRoot).expectSuccess()
 
@@ -207,7 +205,7 @@ class JsonParserTest {
             ["abc", "def"]
         """.trimIndent()
 
-        val tokens = jsonLexer.tokenize(jsonString)
+        val tokens = JsonLexer(jsonString).tokenize()
 
         val nodes = parseJsonNodeArray(tokens, NodeRoot).expectSuccess()
 
@@ -235,7 +233,7 @@ class JsonParserTest {
           }
         """
 
-        val tokens = jsonLexer.tokenize(jsonString)
+        val tokens = JsonLexer(jsonString).tokenize()
 
         val nodes = parseJsonNodeObject(
             tokens,

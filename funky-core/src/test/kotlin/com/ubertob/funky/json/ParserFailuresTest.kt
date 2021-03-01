@@ -8,12 +8,12 @@ import strikt.assertions.isEqualTo
 class ParserFailuresTest {
 
     @Test
-    fun `parsing illegal Int gives us precise errors`() {
-        val illegalJson = "123b"
+    fun `parsing json not completely gives us precise errors`() {
+        val illegalJson = "123 b"
 
         val error = JInt.fromJson(illegalJson).expectFailure()
 
-        expectThat(error.msg).isEqualTo("error at parsing: Expected an Int at position 1 but found '123b' while parsing <[root]>")
+        expectThat(error.msg).isEqualTo("error at parsing: Expected EOF at position 5 but found 'b' while parsing <[root]>")
     }
 
     @Test
@@ -22,7 +22,7 @@ class ParserFailuresTest {
 
         val error = JBoolean.fromJson(illegalJson).expectFailure()
 
-        expectThat(error.msg).isEqualTo("error at parsing: Expected an Int at position 1 but found '123b' while parsing <[root]>")
+        expectThat(error.msg).isEqualTo("error at parsing: Expected a Boolean at position 1 but found 'False' while parsing <[root]>")
     }
 
     @Test
@@ -33,16 +33,16 @@ class ParserFailuresTest {
 
         val error = JString.fromJson(illegalJson).expectFailure()
 
-        expectThat(error.msg).isEqualTo("error at parsing: Expected a Strinh at position 1 but found 'EOF' while parsing <[root]>")
+        expectThat(error.msg).isEqualTo("error at parsing: Expected a String at position 0 but found '' while parsing <[root]>")
     }
 
     @Test
     fun `parsing illegal Long gives us precise errors`() {
-        val illegalJson = "123,234"
+        val illegalJson = "123-234"
 
         val error = JLong.fromJson(illegalJson).expectFailure()
 
-        expectThat(error.msg).isEqualTo("error at parsing: Expected an Int at position 1 but found '123b' while parsing <[root]>")
+        expectThat(error.msg).isEqualTo("error at parsing: Expected a Number at position 0 but found 'Character - is neither a decimal digit number, decimal point, nor \"e\" notation exponential mark.' while parsing <[root]>")
     }
 
     @Test

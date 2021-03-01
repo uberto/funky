@@ -1,12 +1,14 @@
 package com.ubertob.funky.json
 
-class PeekingIterator<T>(val innerIterator: Iterator<T>) : Iterator<T> {
+interface PeekingIterator<T> : Iterator<T> {
+    fun peek(): T
+}
+
+class PeekingIteratorWrapper<T>(val innerIterator: Iterator<T>) : PeekingIterator<T> {
 
     private var next: T? = null
 
-    private var counter = 0
-
-    fun peek(): T = next ?: run {
+    override fun peek(): T = next ?: run {
         val nn = innerIterator.next()
         next = nn
         nn
@@ -16,9 +18,7 @@ class PeekingIterator<T>(val innerIterator: Iterator<T>) : Iterator<T> {
 
     override fun next(): T = (next ?: advanceIterator()).also { next = null }
 
-    fun position(): Int = counter
-
-    private fun advanceIterator(): T = innerIterator.next().also { counter++ }
+    private fun advanceIterator(): T = innerIterator.next()
 }
 
-fun <T> Sequence<T>.peekingIterator(): PeekingIterator<T> = PeekingIterator(iterator())
+fun <T> Sequence<T>.peekingIterator(): PeekingIterator<T> = PeekingIteratorWrapper(iterator())
