@@ -29,8 +29,7 @@ interface JObject<T : Any> : JsonAdjunction<T, JsonNodeObject> {
                 writer(acc, value)
             }
 
-    override fun parseToNode(tokensStream: TokensStream, path: NodePath): Outcome<JsonError, JsonNodeObject> =
-        parseJsonNodeObject(tokensStream, path)
+    override val nodeType get() = ObjectNode
 
 }
 
@@ -38,9 +37,6 @@ interface JObject<T : Any> : JsonAdjunction<T, JsonNodeObject> {
 abstract class JAny<T : Any> : JObject<T> {
 
     private val nodeWriters: AtomicReference<Set<NodeWriter<T>>> = AtomicReference(emptySet())
-
-    override fun parseToNode(tokensStream: TokensStream, path: NodePath): Outcome<JsonError, JsonNodeObject> =
-        parseJsonNodeObject(tokensStream, path)
 
     override fun getWriters(value: T): Set<NodeWriter<T>> = nodeWriters.get()
 
@@ -64,17 +60,14 @@ sealed class JsonProperty<T> {
 
 data class JsonParsingException(val error: JsonError) : RuntimeException()
 
-
 data class JsonPropMandatory<T : Any, JN : JsonNode>(override val propName: String, val jf: JsonAdjunction<T, JN>) :
     JsonProperty<T>() {
 
-    @Suppress("UNCHECKED_CAST")
     override fun getter(wrapped: JsonNodeObject): Outcome<JsonError, T> =
         wrapped.fieldMap[propName]
-            ?.let { idn ->
-                jf.fromJsonNode(idn as JN)
-            }
+            ?.let(jf::fromJsonNodeBase)
             ?: JsonError(wrapped.path, "Not found $propName").asFailure()
+
 
     override fun setter(value: T): (JsonNodeObject) -> JsonNodeObject =
         { wrapped ->
@@ -90,11 +83,12 @@ data class JsonPropMandatory<T : Any, JN : JsonNode>(override val propName: Stri
 data class JsonPropOptional<T : Any, JN : JsonNode>(override val propName: String, val jf: JsonAdjunction<T, JN>) :
     JsonProperty<T?>() {
 
-    @Suppress("UNCHECKED_CAST")
+
     override fun getter(wrapped: JsonNodeObject): Outcome<JsonError, T?> =
         wrapped.fieldMap[propName]
-            ?.let { idn -> jf.fromJsonNode(idn as JN) }
+            ?.let(jf::fromJsonNodeBase)
             ?: null.asSuccess()
+
 
     override fun setter(value: T?): (JsonNodeObject) -> JsonNodeObject =
         { wrapped ->

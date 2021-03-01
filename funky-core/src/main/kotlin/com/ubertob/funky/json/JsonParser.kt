@@ -42,10 +42,10 @@ fun parseJsonNodeBoolean(
 fun parseJsonNodeNum(
     tokens: TokensStream,
     path: NodePath
-): Outcome<JsonError, JsonNodeNum> =
+): Outcome<JsonError, JsonNodeNumber> =
     tryParse("a Number", tokens.position(), path) {
         val t = tokens.next()
-        JsonNodeNum(BigDecimal(t), path)
+        JsonNodeNumber(BigDecimal(t), path)
     }
 
 
@@ -73,9 +73,6 @@ fun parseJsonNodeString(
         if (endQuote != "\"") return parsingFailure("'\"'", endQuote, tokens.position(), path)
         JsonNodeString(text, path)
     }
-
-
-typealias TokenStreamParser<T> = (TokensStream, NodePath) -> JsonOutcome<T>
 
 
 fun parseJsonNodeArray(
@@ -146,12 +143,12 @@ fun parseNewNode(tokens: TokensStream, path: NodePath): JsonOutcome<JsonNode> =
     }
 
 
-fun JsonNode.render(): String =
+fun JsonNode.render(): String = //todo: try returning StringBuilder for perf?
     when (this) {
         is JsonNodeNull -> "null"
         is JsonNodeString -> text.putInQuotes()
         is JsonNodeBoolean -> value.toString()
-        is JsonNodeNum -> num.toString()
+        is JsonNodeNumber -> num.toString()
         is JsonNodeArray -> values.map { it.render() }.joinToString(prefix = "[", postfix = "]")
         is JsonNodeObject -> fieldMap.entries.map { it.key.putInQuotes() + ": " + it.value.render() }
             .joinToString(prefix = "{", postfix = "}")

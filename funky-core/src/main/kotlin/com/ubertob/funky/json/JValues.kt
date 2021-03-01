@@ -10,8 +10,8 @@ object JBoolean : JsonAdjunction<Boolean, JsonNodeBoolean> {
 
     override fun fromJsonNode(node: JsonNodeBoolean): JsonOutcome<Boolean> = node.value.asSuccess()
     override fun toJsonNode(value: Boolean, path: NodePath): JsonNodeBoolean = JsonNodeBoolean(value, path)
-    override fun parseToNode(tokensStream: TokensStream, path: NodePath): JsonOutcome<JsonNodeBoolean> =
-        parseJsonNodeBoolean(tokensStream, path)
+
+    override val nodeType = BooleanNode
 
 }
 
@@ -19,9 +19,8 @@ object JString : JsonAdjunction<String, JsonNodeString> {
 
     override fun fromJsonNode(node: JsonNodeString): JsonOutcome<String> = node.text.asSuccess()
     override fun toJsonNode(value: String, path: NodePath): JsonNodeString = JsonNodeString(value, path)
-    override fun parseToNode(tokensStream: TokensStream, path: NodePath): JsonOutcome<JsonNodeString> =
-        parseJsonNodeString(tokensStream, path)
 
+    override val nodeType = StringNode
 }
 
 object JDouble : JNumRepresentable<Double>() {
@@ -51,14 +50,14 @@ fun <T : Any> tryFromNode(node: JsonNode, f: () -> T): JsonOutcome<T> =
         }
     }
 
-abstract class JNumRepresentable<T : Any>() : JsonAdjunction<T, JsonNodeNum> {
+abstract class JNumRepresentable<T : Any>() : JsonAdjunction<T, JsonNodeNumber> {
     abstract val cons: (BigDecimal) -> T
     abstract val render: (T) -> BigDecimal
 
-    override fun fromJsonNode(node: JsonNodeNum): JsonOutcome<T> = tryFromNode(node) { cons(node.num) }
-    override fun toJsonNode(value: T, path: NodePath): JsonNodeNum = JsonNodeNum(render(value), path)
-    override fun parseToNode(tokensStream: TokensStream, path: NodePath): JsonOutcome<JsonNodeNum> =
-        parseJsonNodeNum(tokensStream, path)
+    override fun fromJsonNode(node: JsonNodeNumber): JsonOutcome<T> = tryFromNode(node) { cons(node.num) }
+    override fun toJsonNode(value: T, path: NodePath): JsonNodeNumber = JsonNodeNumber(render(value), path)
+
+    override val nodeType = NumberNode
 }
 
 abstract class JStringRepresentable<T : Any>() : JsonAdjunction<T, JsonNodeString> {
@@ -67,8 +66,9 @@ abstract class JStringRepresentable<T : Any>() : JsonAdjunction<T, JsonNodeStrin
 
     override fun fromJsonNode(node: JsonNodeString): JsonOutcome<T> = tryFromNode(node) { cons(node.text) }
     override fun toJsonNode(value: T, path: NodePath): JsonNodeString = JsonNodeString(render(value), path)
-    override fun parseToNode(tokensStream: TokensStream, path: NodePath): JsonOutcome<JsonNodeString> =
-        JString.parseToNode(tokensStream, path)
+
+    override val nodeType = StringNode
+
 }
 
 
@@ -88,6 +88,5 @@ data class JArray<T : Any>(val helper: JsonAdjunction<T, *>) : JsonAdjunction<Li
         f: (JsonNode) -> JsonOutcome<T>
     ): JsonOutcome<List<T>> = node.values.map(f).extract()
 
-    override fun parseToNode(tokensStream: TokensStream, path: NodePath): JsonOutcome<JsonNodeArray> =
-        parseJsonNodeArray(tokensStream, path)
+    override val nodeType = ArrayNode
 }

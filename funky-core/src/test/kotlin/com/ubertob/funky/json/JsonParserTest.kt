@@ -44,7 +44,7 @@ class JsonParserTest {
     fun `render exp Num`() {
         val value = Double.MIN_VALUE
 
-        val jsonString = JsonNodeNum(value.toBigDecimal(), NodeRoot).render()
+        val jsonString = JsonNodeNumber(value.toBigDecimal(), NodeRoot).render()
 
         expectThat(jsonString).isEqualTo("4.9E-324")
     }
@@ -54,7 +54,7 @@ class JsonParserTest {
         val num = "123456789123456789.01234567890123456789"
         val value = BigDecimal(num)
 
-        val jsonString = JsonNodeNum(value, NodeRoot).render()
+        val jsonString = JsonNodeNumber(value, NodeRoot).render()
 
         expectThat(jsonString).isEqualTo(num)
     }
@@ -63,7 +63,7 @@ class JsonParserTest {
     fun `render integer Num`() {
         val value = Int.MAX_VALUE.toDouble()
 
-        val jsonString = JsonNodeNum(value.toBigDecimal(), NodeRoot).render()
+        val jsonString = JsonNodeNumber(value.toBigDecimal(), NodeRoot).render()
 
         expectThat(jsonString).isEqualTo("2147483647")
     }
@@ -75,7 +75,7 @@ class JsonParserTest {
 
             val value = Random.nextDouble().toBigDecimal()
 
-            val jsonString = JsonNodeNum(value, NodeRoot).render()
+            val jsonString = JsonNodeNumber(value, NodeRoot).render()
 
             val tokens = JsonLexer(jsonString).tokenize()
 
@@ -88,7 +88,7 @@ class JsonParserTest {
 
             val value = Random.nextLong().toBigDecimal()
 
-            val jsonString = JsonNodeNum(value, NodeRoot).render()
+            val jsonString = JsonNodeNumber(value, NodeRoot).render()
 
             val tokens = JsonLexer(jsonString).tokenize()
 
@@ -101,7 +101,7 @@ class JsonParserTest {
 
             val value = Random.nextLong().toBigDecimal().pow(10)
 
-            val jsonString = JsonNodeNum(value, NodeRoot).render()
+            val jsonString = JsonNodeNumber(value, NodeRoot).render()
 
 //            println("$value -> $jsonString")
 
@@ -116,7 +116,7 @@ class JsonParserTest {
 
             val value = Random.nextDouble().toBigDecimal().pow(10)
 
-            val jsonString = JsonNodeNum(value, NodeRoot).render()
+            val jsonString = JsonNodeNumber(value, NodeRoot).render()
 
 //            println("$value -> $jsonString")
 
@@ -215,7 +215,7 @@ class JsonParserTest {
     @Test
     fun `render object`() {
         val jsonString = JsonNodeObject(
-            mapOf("id" to JsonNodeNum(123.toBigDecimal(), NodeRoot), "name" to JsonNodeString("Ann", NodeRoot)),
+            mapOf("id" to JsonNodeNumber(123.toBigDecimal(), NodeRoot), "name" to JsonNodeString("Ann", NodeRoot)),
             NodeRoot
         ).render()
 

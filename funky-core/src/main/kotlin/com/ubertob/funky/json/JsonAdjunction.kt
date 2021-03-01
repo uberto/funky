@@ -29,14 +29,24 @@ JSON here can be either the Json string or the JsonNode
 
 interface JsonAdjunction<T, JN : JsonNode> {
 
-    @Suppress("UNCHECKED_CAST")
-    fun fromJsonNodeBase(node: JsonNode): JsonOutcome<T> =
-        (node as? JN)?.let { fromJsonNode(it) } ?: JsonError(node.path, "Wrong JsonNode type!").asFailure()
+    val nodeType: NodeKind<JN>
 
+    @Suppress("UNCHECKED_CAST")
+    fun safeCast(node: JsonNode): JsonOutcome<JN> =
+        if (node.nodeKind() == nodeType)
+            (node as JN).asSuccess()
+        else
+            JsonError(
+                node.path,
+                "expected a ${nodeType.desc} but found ${node.nodeKind().desc}"
+            ).asFailure()
+
+    fun fromJsonNodeBase(node: JsonNode): JsonOutcome<T> = safeCast(node).bind(::fromJsonNode)
     fun fromJsonNode(node: JN): JsonOutcome<T>
     fun toJsonNode(value: T, path: NodePath): JN
 
-    fun parseToNode(tokensStream: TokensStream, path: NodePath): JsonOutcome<JN>
+    fun parseToNode(tokensStream: TokensStream, path: NodePath): JsonOutcome<JN> =
+        nodeType.parse(tokensStream, path)
 
     fun toJson(value: T): String = toJsonNode(value, NodeRoot).render()
     fun fromJson(jsonString: String): JsonOutcome<T> {

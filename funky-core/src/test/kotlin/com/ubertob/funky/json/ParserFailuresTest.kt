@@ -107,8 +107,8 @@ class ParserFailuresTest {
 
         val error = JInvoice.fromJson(jsonWithDifferentField).expectFailure()
 
-        expectThat(error.msg).isEqualTo("error at parsing: Expected a Double at position 55 but found '\"' while parsing <[root]/items/0/price>")
+        expectThat(error.msg).isEqualTo("error on </items/0/price> expected a Number but found String")
     }
 
-    //add tests for... wrong enum, jmap with different node types
+    //add tests for... wrong enum, jmap with mixed node types, Double instead of Long
 }

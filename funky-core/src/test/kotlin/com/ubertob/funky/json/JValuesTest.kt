@@ -199,14 +199,11 @@ class JValuesTest {
 
 
 //todo
-// improve errors + add tests for other json errors
 // add test example with Java
 // add prettyPrint/compactPrint options
 // add null/skipField option
 // add parseJson from Reader
-// serialize with stringbuilder
 // add tests for concurrency reuse
 // measure performance against other libs
-// try to remove unsafe cast or prove them safe
 // add un-typed option JObject<Any>
 // add constant fields (ignoring Json content)
